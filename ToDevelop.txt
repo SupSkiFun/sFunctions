@@ -14,7 +14,7 @@ $groups[0].     ProtectVms  UnprotectVms    ListProtectedVms
 #>
 
 
-	
+
 List all protection groups associated with the SRM server.
 
 $srmApi = $srmConnection.ExtensionData
@@ -54,7 +54,8 @@ $aps |% {
     $lo = [pscustomobject]@{
         RecoverPlan = $ap.Name   # Plan Name
         ProtectionGroup = $ap.ProtectionGroups.GetInfo().Name  # Protection Group Name
-        DataStore = $ar   # Refine to get actual name?  See above logic.     Check for shadowing?-don't think possible.
+        DataStore = $ar   # Refine to get actual name?  See above logic.
+                          # Check for shadowing?-don't think possible at DS, but maybe at SRM level - protecting?.
     }
     $lo
 }
