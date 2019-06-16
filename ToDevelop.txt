@@ -1,0 +1,60 @@
+Take a look at my old SRM  module as well.
+
+
+
+<#
+$srmED =  $global:DefaultSrmServers.ExtensionData
+$plans = $srmED.Recovery.ListPlans()
+$plans[0].GetInfo().ProtectionGroups.GetInfo()
+$srmED.Protection.ListProtectedVMs()
+$groups = $srmed.Protection.ListProtectionGroups()
+$groups[0].ListProtectedDatastores()
+$groups[0].ListRecoveryPlans()
+$groups[0].     ProtectVms  UnprotectVms    ListProtectedVms
+#>
+
+
+	
+List all protection groups associated with the SRM server.
+
+$srmApi = $srmConnection.ExtensionData
+$protectionGroups = $srmApi.Protection.ListProtectionGroups()
+4
+Associate the TestVM virtual machine with the ProtGroup1 protection group and enable the protection for that virtual machine.
+
+$vmToAdd = Get-VM "TestVM"
+
+$targetProtectionGroup = $protectionGroups | where {$_.GetInfo().Name -eq "ProtGroup1" }
+
+$targetProtectionGroup.AssociateVms(@($vmToAdd.ExtensionData.MoRef))
+
+# Enable protection for that virtual machine
+$protectionSpec = New-Object VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec
+$protectionSpec.Vm = $vmToAdd.ExtensionData.MoRef
+$protectTask = $targetProtectionGroup.ProtectVms($protectionSpec)
+while(-not $protectTask.IsComplete()) { sleep -Seconds 1 }
+
+
+
+$ed = $global:DefaultSrmServers.extensiondata
+$pgs = $ed.Protection.ListProtectionGroups()
+$pgs |% {
+    $lo = [pscustomobject]@{
+        Name = $_.GetInfo().Name  # Protection Group Name
+        DataStore = $_.ListProtectedDatastores().MoRef  # Affiliated DAtastore Name(s)
+    }
+    $lo
+}
+
+$aps = $ed.Recovery.ListPlans()
+$aps |% {
+    $ap = $_.GetInfo()
+    $ar = $ap.ProtectionGroups.ListProtectedDatastores().MoRef
+    # Put in logic to get datastore info if available ; got to catch that error!
+    $lo = [pscustomobject]@{
+        RecoverPlan = $ap.Name   # Plan Name
+        ProtectionGroup = $ap.ProtectionGroups.GetInfo().Name  # Protection Group Name
+        DataStore = $ar   # Refine to get actual name?  See above logic.     Check for shadowing?-don't think possible.
+    }
+    $lo
+}
