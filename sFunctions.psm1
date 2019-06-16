@@ -17,6 +17,46 @@ function csrm
 
 <#
 .SYNOPSIS
+Retrieves all SRM Recovery Plans
+.DESCRIPTION
+Retrieves all SRM Recovery Plans
+.EXAMPLE
+Place all the SRM Recovery Plans into a variable:
+$allRP = Get-SRMRecoveryPlan
+.EXAMPLE
+Place SRM Recovery Plans matching a criteria into a variable:
+$myRP = Get-SRMRecoveryPlan | Where-Object -Property Name -Match "CL07*"
+#>
+
+Function Get-SrmRecoveryPlan
+{
+    [cmdletbinding()]
+    param()
+
+    Begin
+    {
+        $srmED =  $DefaultSrmServers.ExtensionData
+        #$srmED =  $global:DefaultSrmServers.ExtensionData
+        $plans = $srmED.Recovery.ListPlans()
+    }
+
+    Process
+    {
+        foreach ($plan in $plans)
+        {
+            $pnom = $plan.GetInfo().Name
+            Add-Member -InputObject $plan -MemberType NoteProperty -Name "Name" -Value $pnom
+        }
+    }
+
+    End
+    {
+        $plans
+    }
+}
+
+<#
+.SYNOPSIS
 Sends a Dismiss command to a SRM Recovery Plan
 .DESCRIPTION
 Sends a Dismiss command to a SRM Recovery Plan Prompt to continue plan execution.
@@ -24,7 +64,7 @@ Does not attempt if submitted plan is not in a Prompting state.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
-$p = Get-SRMRecoveryPlan -Name XYZ
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Send-SRMDismiss
 #>
 Function Send-SRMDismiss
@@ -72,7 +112,7 @@ Does not attempt if submitted plan is not in a NeedsCleanup state.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
-$p = Get-SRMRecoveryPlan -Name XYZ
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMCleanUp
 #>
 Function Start-SRMCleanUp
@@ -124,11 +164,11 @@ SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
 Future:  Defaults to False.  Can be set True to Sync Data.  Believe exposed in SRM 6.5 API
 .EXAMPLE
-$p = Get-SRMRecoveryPlan -Name XYZ
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest
 .EXAMPLE
 Future Functionality Below:
-$p = Get-SRMRecoveryPlan -Name XYZ
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest -SyncData=$False
 #>
 
@@ -152,7 +192,7 @@ Function Start-SRMTest
         Below two lines for creating the option to synch or not.  Believe exposed in SRM 6.5 API
         Also modify the entry in the process block.
         $rpOpt = New-Object VMware.VimAutomation.Srm.Views.SrmRecoveryOptions
-        $rpOpt.SyncData = $False
+        $rpOpt.SyncData = $SyncData
         #>
 
     }
