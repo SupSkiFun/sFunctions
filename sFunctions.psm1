@@ -9,9 +9,8 @@
 #>
 function csrm
 {
-	$CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
-	$CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
-    #Connect-SrmServer -SrmServerAddress $global:DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
+    $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
+    $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
     Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
 }
 
