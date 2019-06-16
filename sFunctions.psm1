@@ -7,7 +7,7 @@
 .EXAMPLE
  csrm
 #>
-function csrm
+Function csrm
 {
     $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
     $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
@@ -35,7 +35,6 @@ Function Get-SrmRecoveryPlan
     Begin
     {
         $srmED =  $DefaultSrmServers.ExtensionData
-        #$srmED =  $global:DefaultSrmServers.ExtensionData
         $plans = $srmED.Recovery.ListPlans()
     }
 
