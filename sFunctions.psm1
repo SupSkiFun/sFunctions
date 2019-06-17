@@ -1,8 +1,26 @@
 <#
 .SYNOPSIS
-Retrieves all SRM Recovery Plans
+ Connects to the SRM instance of the currently connected VCenter
 .DESCRIPTION
-Retrieves all SRM Recovery Plans
+ Connects to the SRM instance of the currently connected VCenter and its paired partner with the current 
+ session username.  Prompts for a SRM password.  Password is applied locally and remotely.
+.EXAMPLE
+ csrm
+#>
+Function csrm
+{
+    $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
+    $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
+    Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
+}
+
+<#
+.SYNOPSIS
+Retrieves SRM Recovery Plans
+.DESCRIPTION
+Retrieves SRM Recovery Plans
+.OUTPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
 Place all the SRM Recovery Plans into a variable:
 $allRP = Get-SRMRecoveryPlan
@@ -45,6 +63,8 @@ Sends a Dismiss command to a SRM Recovery Plan Prompt to continue plan execution
 Does not attempt if submitted plan is not in a Prompting state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Send-SRMDismiss
@@ -87,12 +107,81 @@ Function Send-SRMDismiss
 
 <#
 .SYNOPSIS
+Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.
+.DESCRIPTION
+Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan, 
+ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  DataStore Name is 
+Not Available when run from the Recovery Site; it is only available when run from the Protection Site.
+.PARAMETER RecoveryPlan
+SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.OUTPUTS
+PSCUSTOMOBJECT SupSkiFun.SRM.Info
+.EXAMPLE
+Show Relationship of all SRM Recovery Plans returning object into a variable:
+$allRP = Get-SRMRecoveryPlan
+$MyVar = $allRP | Show-SRMRelationship
+.EXAMPLE
+Show Relationship of specific SRM Recovery Plan(s) matching a criteria, returning object into a variable:
+$myRP = Get-SRMRecoveryPlan | Where-Object -Property Name -Match "CL07*"
+$MyVar = $myRP | Show-SRMRelationship
+#>
+Function Show-SRMRelationship
+{
+    [cmdletbinding()]
+    Param
+    (
+        [Parameter (Mandatory = $true, ValueFromPipeline = $true)]
+        [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan
+    )
+
+    Begin
+    {
+        $nota = "Not Available on Recovery Site; only available from the Protection Site"
+    }
+
+    Process
+    {
+        foreach ($plan in $RecoveryPlan)
+        {
+            $ap = $plan.GetInfo()
+            $pg = $ap.ProtectionGroups.GetInfo().Name
+            $ar = $ap.ProtectionGroups.ListProtectedDatastores().Moref
+
+            if ($ap.State -match "Protecting")
+            {
+                $ds = (get-datastore -id $ar).Name
+            }
+            else
+            {
+                $ds = $nota
+            }
+
+            $lo = [pscustomobject]@{
+                RecoveryPlan = $ap.Name
+                ProtectionGroup = $pg
+                Datastore = $ds
+                RecoveryPlanMoRef = $plan.MoRef
+                ProtectionGroupMoRef = $ap.ProtectionGroups.Moref
+                DataStoreMoRef = $ar
+            }
+            $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Info')
+            $lo
+        }
+    }
+}
+
+<#
+.SYNOPSIS
 Starts the SRM Cleanup Process.
 .DESCRIPTION
 Starts the SRM Cleanup Process for specified SRM Recovery Plans.
 Does not attempt if submitted plan is not in a NeedsCleanup state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMCleanUp
@@ -145,6 +234,8 @@ Does not attempt if submitted plan is not in a Ready state.  Must be run on the 
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
 Future:  Defaults to False.  Can be set True to Sync Data.  Believe exposed in SRM 6.5 API
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest
@@ -215,6 +306,8 @@ Stops / cancels an SRM Test for specified SRM Recovery Plans.
 Does not attempt if submitted plan is not in a Running or Prompting state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Stop-SRMTest
