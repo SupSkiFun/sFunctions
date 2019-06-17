@@ -48,14 +48,14 @@ $pgs |% {
 
 $aps = $ed.Recovery.ListPlans()
 $aps |% {
-    $ap = $_.GetInfo()
-    $ar = $ap.ProtectionGroups.ListProtectedDatastores().MoRef
-    # Put in logic to get datastore info if available ; got to catch that error!
-    $lo = [pscustomobject]@{
-        RecoverPlan = $ap.Name   # Plan Name
-        ProtectionGroup = $ap.ProtectionGroups.GetInfo().Name  # Protection Group Name
-        DataStore = $ar   # Refine to get actual name?  See above logic.
-                          # Check for shadowing?-don't think possible at DS, but maybe at SRM level - protecting?.
-    }
-    $lo
-}
+$ap = $_.GetInfo()
+$ar = $ap.ProtectionGroups.ListProtectedDatastores().MoRef
+if ($ap.State -match "Protecting") { $ds = (get-datastore -id $ar).Name }
+else {$ds = $ar}
+$lo = [pscustomobject]@{
+>>         RecoverPlan = $ap.Name   # Plan Name
+>>         ProtectionGroup = $ap.ProtectionGroups.GetInfo().Name
+>> Datastore = $ds
+>> }
+>> $lo
+>> }
