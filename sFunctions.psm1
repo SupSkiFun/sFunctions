@@ -1,21 +1,5 @@
 <#
 .SYNOPSIS
- Connects to the SRM instance of the currently connected VCenter
-.DESCRIPTION
- Connects to the SRM instance of the currently connected VCenter and its paired partner	with the current session
- username.  Prompts for a SRM password.  Password is applied locally and remotely.
-.EXAMPLE
- csrm
-#>
-Function csrm
-{
-    $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
-    $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
-    Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
-}
-
-<#
-.SYNOPSIS
 Retrieves all SRM Recovery Plans
 .DESCRIPTION
 Retrieves all SRM Recovery Plans
@@ -27,7 +11,7 @@ Place SRM Recovery Plans matching a criteria into a variable:
 $myRP = Get-SRMRecoveryPlan | Where-Object -Property Name -Match "CL07*"
 #>
 
-Function Get-SrmRecoveryPlan
+Function Get-SRMRecoveryPlan
 {
     [cmdletbinding()]
     param()
@@ -58,7 +42,7 @@ Function Get-SrmRecoveryPlan
 Sends a Dismiss command to a SRM Recovery Plan
 .DESCRIPTION
 Sends a Dismiss command to a SRM Recovery Plan Prompt to continue plan execution.
-Does not attempt if submitted plan is not in a Prompting state.
+Does not attempt if submitted plan is not in a Prompting state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
@@ -106,7 +90,7 @@ Function Send-SRMDismiss
 Starts the SRM Cleanup Process.
 .DESCRIPTION
 Starts the SRM Cleanup Process for specified SRM Recovery Plans.
-Does not attempt if submitted plan is not in a NeedsCleanup state.
+Does not attempt if submitted plan is not in a NeedsCleanup state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
@@ -156,7 +140,7 @@ Function Start-SRMCleanUp
 Starts a Test SRM Recovery Plan.
 .DESCRIPTION
 Starts a Test SRM Recovery Plan, optionally synching data.
-Does not attempt if submitted plan is not in a Ready state.
+Does not attempt if submitted plan is not in a Ready state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
@@ -228,7 +212,7 @@ Function Start-SRMTest
 Stops / cancels an SRM Test.
 .DESCRIPTION
 Stops / cancels an SRM Test for specified SRM Recovery Plans.
-Does not attempt if submitted plan is not in a Running or Prompting state.
+Does not attempt if submitted plan is not in a Running or Prompting state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
