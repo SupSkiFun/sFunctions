@@ -81,6 +81,9 @@ $abc[47].ListProtectedDatastores().Moref = $abc[47]
 $rr = get-vm uelk*
 foreach ($r in $rr) {($fff.item($($r.extensiondata.datastore))).Getinfo().Name}
 
+$a = $rr[4].extensiondata.datastore
+$fff.ContainsKey($($a))
+
 $abc = $srmed.Protection.ListProtectionGroups()
 
 $abc[47]                                                                                                                    
