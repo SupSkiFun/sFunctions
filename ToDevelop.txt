@@ -59,3 +59,39 @@ $lo = [pscustomobject]@{
 >> }
 >> $lo
 >> }
+
+
+Need to find way to search correlate datastore to protection group.  
+Either a hash of all protection groups and just search it  
+Or a way to grab the datastore from the VM and correlate that to the protection group.
+$abc[47].ListProtectedDatastores() 
+or this!!!!
+
+$v = get-vm msfc507antv
+
+ $eee = @{
+$abc[47].ListProtectedDatastores().Moref = $abc[47]
+ }
+
+ $eee.Item($($v.ExtensionData.Datastore))
+
+ $fff = @{}
+ foreach ($a in $abc) {$fff.Add($a.ListProtectedDatastores().Moref,$a)}
+
+$rr = get-vm uelk*
+foreach ($r in $rr) {($fff.item($($r.extensiondata.datastore))).Getinfo().Name}
+
+$abc = $srmed.Protection.ListProtectionGroups()
+
+$abc[47]                                                                                                                    
+MoRef
+-----
+SrmProtectionGroup-srm-vm-protection-group-184053309
+
+Should Monitor task as shown in older SRM code
+
+$y = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
+$y.vm=(get-vm msfc507bntv).ExtensionData.MoRef
+$abc[47].ProtectVms($y)
+$y.vm=(get-vm msfc507antv).ExtensionData.MoRef
+$abc[47].ProtectVms($y)
