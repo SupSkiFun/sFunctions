@@ -64,19 +64,40 @@ $lo = [pscustomobject]@{
 Need to find way to search correlate datastore to protection group.  
 Either a hash of all protection groups and just search it  
 Or a way to grab the datastore from the VM and correlate that to the protection group.
-$abc[47].ListProtectedDatastores() 
-or this!!!!
 
-$v = get-vm msfc507antv
 
- $eee = @{
-$abc[47].ListProtectedDatastores().Moref = $abc[47]
- }
+$vm = get-vm aoag555antv    # Will be a parameter piped in
+$srmED = $DefaultSrmServers.ExtensionData
+$abc = $srmED.Protection.ListProtectionGroups()
+$fff = @{}
+foreach ($a in $abc) {$fff.Add($a.ListProtectedDatastores().Moref,$a)}
+foreach ($v in $vm)
+{
+    $cle = $v.ExtensionData.DataStore
+    $vmo = $v.ExtensionData.Moref
+    if ($fff.ContainsKey($($cle)))
+    {
+        $ggg = $fff.Item($($cle))
+        $hhh = $ggg.QueryVmProtection($vmo)
+        if ($hhh.Status -match "CanBeProtected")
+        {
+            $y = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
+            $y.Vm = $vmo
+            $ggg.ProtectVms($y)
+        }
 
- $eee.Item($($v.ExtensionData.Datastore))
+    }
+    else
+    {
+        Write-Output "Protection Group not Found for Datastore ID ($cle)
+    }
 
- $fff = @{}
- foreach ($a in $abc) {$fff.Add($a.ListProtectedDatastores().Moref,$a)}
+}
+$fff.ContainsKey($($v))
+$fff.Item($($v))
+
+
+
 
 $rr = get-vm uelk*
 foreach ($r in $rr) {($fff.item($($r.extensiondata.datastore))).Getinfo().Name}
@@ -84,7 +105,6 @@ foreach ($r in $rr) {($fff.item($($r.extensiondata.datastore))).Getinfo().Name}
 $a = $rr[4].extensiondata.datastore
 $fff.ContainsKey($($a))
 
-$abc = $srmed.Protection.ListProtectionGroups()
 
 $abc[47]                                                                                                                    
 MoRef
