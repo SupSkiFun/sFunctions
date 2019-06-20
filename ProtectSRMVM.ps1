@@ -15,8 +15,8 @@ Function Protect-SRMVM
 			Write-Output "Terminating.  Session is not connected to a SRM server."
 			break
 		}
-        $stok = "CanBeProtected"
-        $stbad        
+        $statOK = "CanBeProtected"
+        $statBAD = "NeedsConfiguration"       # Need this?
         $na = "Not Attempted."
         $nil = "None"
         # Move this all to Process if SupposrtShouldProcess is used.
@@ -34,6 +34,7 @@ Function Protect-SRMVM
         Function MakeObj
         {
             param($uinfo)
+
             $lo=[pscustomobject]@{
                 VM = $v.Name
                 VMMoRef = $v.ExtensionData.Moref
@@ -50,6 +51,7 @@ Function Protect-SRMVM
         {
             #Better idea?
             param($reason)
+
             $uinfo = @{
                 State = $na +"  "+$reason ;
                 Name = $nil ;
@@ -61,7 +63,31 @@ Function Protect-SRMVM
             $uinfo
         }
 
+<#
+
+        Function ChkDS
+        {
+            param($cle)
+
+            $pgla = $false
+
+            foreach ($cl in $cle)
+            {
+                if ($pghash.ContainsKey($($cl)))
+                {
+                    $pgla = $true
+                }
+                
+            }
+
+        }
         
+        Function ProtVM
+        {
+            $t=1
+        }
+
+#>
 
         foreach ($v in $vm)
         {
@@ -72,7 +98,7 @@ Function Protect-SRMVM
             {
                 $targetpg = $pghash.Item($($cle))
                 $protstat = $targetpg.QueryVmProtection($vmo)
-                if ($protstat.Status -match $stok)
+                if ($protstat.Status -match $statOK)
                 {
                     $vspec = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
                     $vspec.Vm = $vmo
