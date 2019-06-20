@@ -1,4 +1,4 @@
-Function UnProtect-SRMVM 
+Function UnProtect-SRMVM
 {
     [cmdletbinding()]
     Param
@@ -9,15 +9,21 @@ Function UnProtect-SRMVM
 
     Begin
     {
+        $srmED = $DefaultSrmServers.ExtensionData
+		if(!$srmED)
+		{
+			Write-Output "Terminating.  Session is not connected to a SRM server."
+			break
+		}
         #$stat = "CanBeProtected"
-        $na = "Not Attempted"
+        $na = "Not Attempted."
         $stat = "IsProtected"
         $nil = "None"
         # Move this all to Process if SupposrtShouldProcess is used.
-        $srmED = $DefaultSrmServers.ExtensionData
+
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = @{}
-        foreach ($p in $pgroups) 
+        foreach ($p in $pgroups)
         {
             $pghash.Add($p.ListProtectedDatastores().Moref,$p)
         }
@@ -46,7 +52,7 @@ Function UnProtect-SRMVM
             #Better idea?
             param($reason)
             $uinfo = @{
-                State = $na  ;
+                State = $na +"  "+$reason ;
                 Name = $nil ;
                 TaskMoRef = $nil ;
                 Error = @{
@@ -55,10 +61,11 @@ Function UnProtect-SRMVM
             }
             $uinfo
         }
-        
+
         foreach ($v in $vm)
         {
             $cle = $v.ExtensionData.DataStore
+            $nom = $v.ExtensionData.Config.DataStoreURL.Name
             $vmo = $v.ExtensionData.Moref
             if ($pghash.ContainsKey($($cle)))
             {
@@ -67,29 +74,26 @@ Function UnProtect-SRMVM
                 if ($protstat.Status -match $stat)
                 {
                     $utask = $targetpg.UnProtectVms($vmo)
-                    while(-not $utask.IsComplete()) 
-                    { 
-                        Start-Sleep -Seconds 1 
+                    while(-not $utask.IsComplete())
+                    {
+                        Start-Sleep -Seconds 1
                     }
                     $uinfo = $utask.getresult()
                     MakeObj $uinfo
                 }
                 else
                 {
-                    $reason = "State is $($tms.Status).  State should be $stat."
-                    MakeObj(MakeErr($reason)) 
+                    $reason = "State is $($protstat.Status).  State should be $stat."
+                    MakeObj(MakeErr($reason))
                 }
             }
             else
             {
-                Write-Output "Not attempted Missing Protection Group USE VARIABLES for better message"
+                $reason = "Protection Group not found for DataStore $nom , $cle"
+                MakeObj(MakeErr($reason))
             }
 
             $uinfo = $null
-
-
-
-
         }
     }
 }

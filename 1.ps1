@@ -1,4 +1,3 @@
-using module .\SRMhelp.psm1
-
+using module SRMhelp;
 $a = [SRMhelp]::ColInfo((get-service winrm))
 $a
