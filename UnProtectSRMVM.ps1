@@ -23,35 +23,6 @@ Function UnProtect-SRMVM
 
     Process
     {
-        # Function MakeObj
-        # {
-        #     param($tinfo)
-        #     $lo=[pscustomobject]@{
-        #         VM = $v.Name
-        #         VMMoRef = $v.ExtensionData.Moref
-        #         Status = $tinfo.State
-        #         Error = $tinfo.Error.LocalizedMessage
-        #         Task = $tinfo.Name
-        #         TaskMoRef = $tinfo.TaskMoRef
-        #     }
-        #     $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-        #     $lo
-        # }
-
-        # Function MakeErr
-        # {
-        #     param($reason)
-        #     $tinfo = @{
-        #         State = $na +"  "+$reason ;
-        #         Name = $nil ;
-        #         TaskMoRef = $nil ;
-        #         Error = @{
-        #             LocalizedMessage = $nil ;
-        #         }
-        #     }
-        #     $tinfo
-        # }
-
         foreach ($v in $vm)
         {
             Function UnProtVM

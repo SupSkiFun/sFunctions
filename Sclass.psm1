@@ -38,21 +38,4 @@ class SClass
         $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
         return $lo
     }
-
-        <#  Still need this?
-
-        static [hashtable] MakeErr( [string] $reason )
-        {
-            $nil = "None"
-            $einfo = @{
-                State = "Not Attempted. "+$reason ;
-                Name = $nil ;
-                TaskMoRef = $nil ;
-                Error = @{
-                    LocalizedMessage = $nil ;
-                }
-            }
-            return $einfo
-        }
-        #>
 }

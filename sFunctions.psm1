@@ -15,15 +15,43 @@ Function csrm
     Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
 }
 
-Function Test-Me
+<#
+.SYNOPSIS
+Lists Protection Groups 
+.DESCRIPTION
+Outputs an object of Protection Group Name, State and MoRef.
+.OUTPUTS
+PSCUSTOMOBJECT SupSkiFun.ProtectionGroupInfo
+.EXAMPLE
+Get-ProtectionGroup
+.EXAMPLE
+$myvar = Get-ProtectionGroup
+#>
+function Get-ProtectionGroup
 {
-    $a = get-service winrm
-    $b = [SRMhelp]::ColInfo($a)
-    $b
-    $aa = [SRMhelp]::MakeObj("Ca marche?")
-    $aa
-    $aaa = [SRMhelp]::ErrHash("oui oui!")
-    $aaa
+    Begin
+    {
+        $srmED = $DefaultSrmServers.ExtensionData
+        if(!$srmED)
+        {
+            Write-Output "Terminating.  Session is not connected to a SRM server."
+            break
+        }
+        $protgrps=$srmED.Protection.ListProtectionGroups()
+    }
+    Process
+	{
+		foreach ($protgrp in $protgrps)
+		{
+			$lo=[pscustomobject]@{
+				Name = $protgrp.GetInfo().Name
+				State = $protgrp.GetProtectionState()
+				MoRef = $protgrp.MoRef
+			}
+			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.ProtectionGroup.Info')
+			$lo
+		}
+	}
 }
 
 <#
@@ -172,6 +200,7 @@ Function Show-SRMRelationship
 
             $lo = [pscustomobject]@{
                 RecoveryPlan = $ap.Name
+                RecoveryPlanState = $ap.State
                 ProtectionGroup = $pg
                 Datastore = $ds
                 RecoveryPlanMoRef = $plan.MoRef
