@@ -17,52 +17,13 @@ Function Protect-SRMVM
 			break
 		}
         $stat = "CanBeProtected"
-        #$statBAD = "NeedsConfiguration"       # Need this?
-        ###$na = "Not Attempted."
-        ###$nil = "None"
-        # Move this all to Process if SupposrtShouldProcess is used.
-
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [Sclass]::MakePgHash($pgroups)
-        #Write-host "hash"
-        #$pghash.GetEnumerator()
-        #break
     }
     
 
     Process
     {
-        # # # Function MakeObj
-        # # # {
-        # # #     param($tinfo)
-
-        # # #     $lo=[pscustomobject]@{
-        # # #         VM = $v.Name
-        # # #         VMMoRef = $v.ExtensionData.Moref
-        # # #         Status = $tinfo.State
-        # # #         Error = $tinfo.Error.LocalizedMessage
-        # # #         Task = $tinfo.Name
-        # # #         TaskMoRef = $tinfo.TaskMoRef
-        # # #     }
-        # # #     $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-        # # #     $lo
-        # # # }
-
-        # # # Function MakeErr
-        # # # {
-        # # #     #Better idea?
-        # # #     param($reason)
-
-        # # #     $tinfo = @{
-        # # #         State = $na +"  "+$reason ;
-        # # #         Name = $nil ;
-        # # #         TaskMoRef = $nil ;
-        # # #         Error = @{
-        # # #             LocalizedMessage = $nil ;
-        # # #         }
-        # # #     }
-        # # #     $tinfo
-        # # # }
 
 <#
 
@@ -117,14 +78,12 @@ Function Protect-SRMVM
                 else
                 {
                     $reason = "State is $($protstat.Status).  State should be $stat."
-                    #$einfo = [Sclass]::MakeErr($reason)
                     $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
                 }
             }
             else
             {
                 $reason = "Protection Group not found for DataStore $VMdsName , $VMdsID"
-                #$einfo = [Sclass]::MakeErr($reason)
                 $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
             }
 

@@ -33,12 +33,11 @@ Function UnProtect-SRMVM
         Function MakeObj
         {
             param($tinfo)
-            #  Maybe just send the entire error object of $tinfo.Error?
             $lo=[pscustomobject]@{
                 VM = $v.Name
                 VMMoRef = $v.ExtensionData.Moref
                 Status = $tinfo.State
-                Error = $tinfo.Error.LocalizedMessage  # More to glean Here?
+                Error = $tinfo.Error.LocalizedMessage
                 Task = $tinfo.Name
                 TaskMoRef = $tinfo.TaskMoRef
             }
@@ -48,7 +47,6 @@ Function UnProtect-SRMVM
 
         Function MakeErr
         {
-            #Better idea?
             param($reason)
             $tinfo = @{
                 State = $na +"  "+$reason ;
