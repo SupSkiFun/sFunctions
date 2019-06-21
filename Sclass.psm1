@@ -1,7 +1,9 @@
 class SClass
 {
     static [hashtable] MakePgHash ([psobject] $pgroups )
-    #  Put the proper object in for Protection Groups replacing psobject
+    # static [hashtable] MakePgHash ([psobject] $pgroups )
+    #  Put the proper object in for Protection Groups replacing psobject?
+    #  VMware.VimAutomation.Srm.Views.SrmProtectionGroup
     {
         $pghash = @{}
         foreach ($p in $pgroups)
@@ -11,6 +13,8 @@ class SClass
         return $pghash
     }
 
+
+    ## Still need this?
     static [hashtable] MakeErr( [string] $reason )
     {
         $nil = "None"
@@ -25,15 +29,33 @@ class SClass
         return $einfo
     }
 
-    static [pscustomobject] MakeObj( [hashtable] $oinfo , [string] $VMname, [string] $VMmoref )
+    static [pscustomobject] MakeObj([string] $reason , [string] $VMname, [string] $VMmoref )
+    # Replace above psobject with VMware.VimAutomation.Srm.Views.SrmTaskInfo
+    {
+        $nil = "None"
+        $lo = [pscustomobject]@{
+            VM = $VMname
+            VMMoRef = $VMmoref
+            Status = "Not Attempted. "+$reason
+            Error = $nil
+            Task = $nil
+            TaskMoRef = $nil
+        }
+        $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
+        return $lo
+    }
+
+    #static [pscustomobject] MakeObj( [hashtable] $oinfo , [string] $VMname, [string] $VMmoref )
+    static [pscustomobject] MakeObj( [VMware.VimAutomation.Srm.Views.SrmTaskInfo] $tinfo , [string] $VMname, [string] $VMmoref )
+    # Replace above psobject with VMware.VimAutomation.Srm.Views.SrmTaskInfo
     {
         $lo = [pscustomobject]@{
             VM = $VMname
             VMMoRef = $VMmoref
-            Status = $oinfo.State
-            Error = $oinfo.Error.LocalizedMessage
-            Task = $oinfo.Name
-            TaskMoRef = $oinfo.TaskMoRef
+            Status = $tinfo.State
+            Error = $tinfo.Error.LocalizedMessage
+            Task = $tinfo.Name
+            TaskMoRef = $tinfo.TaskMoRef
         }
         $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
         return $lo

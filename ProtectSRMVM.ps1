@@ -1,4 +1,4 @@
-using module .\SClass.psm1
+using module .\sClass.psm1
 Function Protect-SRMVM
 {
     [cmdletbinding()]
@@ -24,7 +24,11 @@ Function Protect-SRMVM
 
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [Sclass]::MakePgHash($pgroups)
+        #Write-host "hash"
+        #$pghash.GetEnumerator()
+        #break
     }
+    
 
     Process
     {
@@ -107,21 +111,21 @@ Function Protect-SRMVM
                 $protstat = $targetpg.QueryVmProtection($VMmoref)
                 if ($protstat.Status -match $stat)
                 {
-                    $tinfo = ProtVM -targetpg $targetpg -VMmoref $moref
+                    $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
                     $lo = [Sclass]::MakeObj( $tinfo , $VMname , $VMmoref )
                 }
                 else
                 {
                     $reason = "State is $($protstat.Status).  State should be $stat."
-                    $einfo = [Sclass]::MakeErr($reason)
-                    $lo = [Sclass]::MakeObj( $einfo , $VMname , $VMmoref )
+                    #$einfo = [Sclass]::MakeErr($reason)
+                    $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
                 }
             }
             else
             {
                 $reason = "Protection Group not found for DataStore $VMdsName , $VMdsID"
-                $einfo = [Sclass]::MakeErr($reason)
-                $lo = [Sclass]::MakeObj( $einfo , $VMname , $VMmoref )
+                #$einfo = [Sclass]::MakeErr($reason)
+                $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
             }
 
             $lo
