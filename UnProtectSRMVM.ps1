@@ -87,7 +87,7 @@ Function UnProtect-SRMVM
             }
             else
             {
-                $reason = "Protection Group not found for DataStore $VMdsName , $VMdsID"
+                $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
                 MakeObj(MakeErr($reason))
             }
 

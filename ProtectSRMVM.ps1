@@ -83,7 +83,7 @@ Function Protect-SRMVM
             }
             else
             {
-                $reason = "Protection Group not found for DataStore $VMdsName , $VMdsID"
+                $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
                 $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
             }
 
