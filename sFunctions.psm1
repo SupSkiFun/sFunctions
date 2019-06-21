@@ -1,8 +1,9 @@
+using module .\SRMhelp.psm1
 <#
 .SYNOPSIS
  Connects to the SRM instance of the currently connected VCenter
 .DESCRIPTION
- Connects to the SRM instance of the currently connected VCenter and its paired partner with the current 
+ Connects to the SRM instance of the currently connected VCenter and its paired partner with the current
  session username.  Prompts for a SRM password.  Password is applied locally and remotely.
 .EXAMPLE
  csrm
@@ -12,6 +13,17 @@ Function csrm
     $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
     $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
     Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
+}
+
+Function Test-Me
+{
+    $a = get-service winrm
+    $b = [SRMhelp]::ColInfo($a)
+    $b
+    $aa = [SRMhelp]::MakeObj("Ca marche?")
+    $aa
+    $aaa = [SRMhelp]::ErrHash("oui oui!")
+    $aaa
 }
 
 <#
@@ -109,8 +121,8 @@ Function Send-SRMDismiss
 .SYNOPSIS
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.
 .DESCRIPTION
-Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan, 
-ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  DataStore Name is 
+Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan,
+ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  DataStore Name is
 Not Available when run from the Recovery Site; it is only available when run from the Protection Site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan

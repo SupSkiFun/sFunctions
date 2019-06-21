@@ -1,24 +1,9 @@
-<#
-.SYNOPSIS
- Connects to the SRM instance of the currently connected VCenter
-.DESCRIPTION
- Connects to the SRM instance of the currently connected VCenter and its paired partner	with the current session 
- username.  Prompts for a SRM password.  Password is applied locally and remotely.
-.EXAMPLE
- csrm
-#>
-function csrm
-{
-	$CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
-	$CPass=Read-Host -AsSecureString -Prompt "Enter a new password"
-	connect-srmserver -srmserveraddress $global:DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
-}
 
 <#
 .SYNOPSIS
 Outputs an object of Protection Groups from SRM Server.
 .DESCRIPTION
-Outputs an object of Protection Groups, related Datastores, MoRef and State from SRM Server.  
+Outputs an object of Protection Groups, related Datastores, MoRef and State from SRM Server.
 Must be connected to SRM server.
 Reports an Error if more than one Datastore is found in a Protection Group
 .OUTPUTS
@@ -40,7 +25,7 @@ function Get-ProtectionGroup
 		}
 		$srmed=$srm.extensiondata
 		$protgrps=$srmed.Protection.ListProtectionGroups()
-		foreach ($protgrp in $protgrps) 
+		foreach ($protgrp in $protgrps)
 		{
 			$protgrpinfo = $protgrp.GetInfo()
 			$pgname=$protgrpinfo.name
@@ -48,7 +33,7 @@ function Get-ProtectionGroup
 			$pgdstores=$protgrp.ListProtectedDatastores().moref
 			$pgdstorescnt=$pgdstores.count
 			$pgdstorename=(get-datastore -id $pgdstores).name
-			if ($pgdstorescnt -ne 1) 
+			if ($pgdstorescnt -ne 1)
 			{
 				$errobj=[pscustomobject]@{
 					Name = $pgname
@@ -75,7 +60,7 @@ function Get-ProtectionGroup
 .SYNOPSIS
 Outputs an object of Recovery Plans on SRM Server.
 .DESCRIPTION
-Outputs an object of Recovery Plans, MoRef, State, and affiliated Protection Groups on SRM Server.  
+Outputs an object of Recovery Plans, MoRef, State, and affiliated Protection Groups on SRM Server.
 Must be connected to SRM server.
 .OUTPUTS
 PSCUSTOMOBJECT SupSkiFun.RecoveryPlanInfo
@@ -96,7 +81,7 @@ function Get-RecoveryPlan
 		}
 		$srmed=$srm.extensiondata
 		$recplans=$srmed.Recovery.ListPlans()
-		foreach ($recplan in $recplans) 
+		foreach ($recplan in $recplans)
 		{
 			$recplaninfo = $recplan.GetInfo()
 			$loopobj=[pscustomobject]@{
@@ -117,7 +102,7 @@ function Get-RecoveryPlan
 .SYNOPSIS
 Outputs an object of Protected VMs and relevant information.
 .DESCRIPTION
-Outputs an object of Protected VM, MoRef, Protection Group, State, Config Status and Faults from SRM Server. 
+Outputs an object of Protected VM, MoRef, Protection Group, State, Config Status and Faults from SRM Server.
 Must be connected to SRM server.
 .OUTPUTS
 PSCUSTOMOBJECT SupSkiFun.ProtectedVMInfo
@@ -138,7 +123,7 @@ function Get-ProtectedVM
 		}
 		$srmed = $srm.extensiondata
 		$pgrps = $srmed.Protection.ListProtectionGroups()
-		foreach ($pgrp in $pgrps) 
+		foreach ($pgrp in $pgrps)
 		{
 			$pvms = $pgrp.ListProtectedVms()
 			foreach ($pvm in $pvms)
@@ -204,7 +189,7 @@ function Get-SRMVM
 
 	Process
 	{
-		foreach ($v in $vm) 
+		foreach ($v in $vm)
 		{
 			$pinfo = $null ; $vmgds = $null; $tgrp = $null
 			try
@@ -238,7 +223,7 @@ function Get-SRMVM
 				$loopobj.PSObject.TypeNames.Insert(0,'SupSkiFun.SRMVMInfo')
 				$loopobj
 			}
-			catch 
+			catch
 			{
 				$errmesg = $err.exception.ToString().split("`t")[3]
 				$loopobj=[pscustomobject]@{
@@ -283,7 +268,7 @@ $myVar = Get-VM Zlab* | Set-SRMVM -Config Protected
 function Set-SRMVM
 {
 	[CmdletBinding()]
- 
+
 	param
     (
         [Parameter(Mandatory=$true,
@@ -334,13 +319,13 @@ function Set-SRMVM
 					Error = $errmesg
 				}
 			}
-			
+
 			elseif(!($err))
 			{
 				$vmgds = $vmg.ExtensionData.Config.DatastoreUrl.Name
 				$tgrp = $pgrps | where {$_.getinfo().name -match $vmgds}
 			}
-			
+
 			if($tgrp -eq $null -and !($err))
 			{
 					$loopobj=[pscustomobject]@{
@@ -354,11 +339,11 @@ function Set-SRMVM
 			elseif($tgrp -ne $null -and !($err))
 			{
 				$utask = $tgrp.UnprotectVms($vmg.ExtensionData.moref)
-				while(-not $utask.IsComplete()) 
-				{ 
-					Start-Sleep -Seconds 1 
+				while(-not $utask.IsComplete())
+				{
+					Start-Sleep -Seconds 1
 				}
-				$uinfo = $utask.getresult()					
+				$uinfo = $utask.getresult()
 				$loopobj=[pscustomobject]@{
 					VM = $vmg.Name
 					MoRef = $vmg.ExtensionData.Moref
@@ -374,9 +359,9 @@ function Set-SRMVM
 					$pspec = New-Object VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec
 					$pspec.Vm = $vmg.ExtensionData.MoRef
 					$ptask = $tgrp.ProtectVms($pspec)
-						while(-not $ptask.IsComplete()) 
-						{ 
-							Start-Sleep -Seconds 1 
+						while(-not $ptask.IsComplete())
+						{
+							Start-Sleep -Seconds 1
 						}
 					$prinfo = $ptask.getresult()
 					$loopobj=[pscustomobject]@{
