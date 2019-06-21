@@ -1,4 +1,4 @@
-using module .\SRMhelp.psm1
+using module .\SClass.psm1
 <#
 .SYNOPSIS
  Connects to the SRM instance of the currently connected VCenter

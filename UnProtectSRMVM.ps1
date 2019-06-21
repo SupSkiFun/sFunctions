@@ -15,7 +15,6 @@ Function UnProtect-SRMVM
 			Write-Output "Terminating.  Session is not connected to a SRM server."
 			break
 		}
-        #$stat = "CanBeProtected"
         $na = "Not Attempted."
         $stat = "IsProtected"
         $nil = "None"
@@ -33,17 +32,17 @@ Function UnProtect-SRMVM
     {
         Function MakeObj
         {
-            param($uinfo)
-            #  Maybe just send the entire error object of $uinfo.Error?
+            param($tinfo)
+            #  Maybe just send the entire error object of $tinfo.Error?
             $lo=[pscustomobject]@{
                 VM = $v.Name
                 VMMoRef = $v.ExtensionData.Moref
-                Status = $uinfo.State
-                Error = $uinfo.Error.LocalizedMessage  # More to glean Here?
-                Task = $uinfo.Name
-                TaskMoRef = $uinfo.TaskMoRef
+                Status = $tinfo.State
+                Error = $tinfo.Error.LocalizedMessage  # More to glean Here?
+                Task = $tinfo.Name
+                TaskMoRef = $tinfo.TaskMoRef
             }
-            $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.UnProtect.Info')
+            $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
             $lo
         }
 
@@ -51,7 +50,7 @@ Function UnProtect-SRMVM
         {
             #Better idea?
             param($reason)
-            $uinfo = @{
+            $tinfo = @{
                 State = $na +"  "+$reason ;
                 Name = $nil ;
                 TaskMoRef = $nil ;
@@ -59,27 +58,28 @@ Function UnProtect-SRMVM
                     LocalizedMessage = $nil ;
                 }
             }
-            $uinfo
+            $tinfo
         }
 
         foreach ($v in $vm)
         {
-            $cle = $v.ExtensionData.DataStore
-            $nom = $v.ExtensionData.Config.DataStoreURL.Name
-            $vmo = $v.ExtensionData.Moref
-            if ($pghash.ContainsKey($($cle)))
+            $VMdsID = $v.ExtensionData.DataStore
+            $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
+            $VMmoref = $v.ExtensionData.Moref
+            $VMname = $v.Name
+            if ($pghash.ContainsKey($($VMdsID)))
             {
-                $targetpg = $pghash.Item($($cle))
-                $protstat = $targetpg.QueryVmProtection($vmo)
+                $targetpg = $pghash.Item($($VMdsID))
+                $protstat = $targetpg.QueryVmProtection($VMmoref)
                 if ($protstat.Status -match $stat)
                 {
-                    $utask = $targetpg.UnProtectVms($vmo)
-                    while(-not $utask.IsComplete())
+                    $ttask = $targetpg.UnProtectVms($VMmoref)
+                    while(-not $ttask.IsComplete())
                     {
                         Start-Sleep -Seconds 1
                     }
-                    $uinfo = $utask.getresult()
-                    MakeObj $uinfo
+                    $tinfo = $ttask.getresult()
+                    MakeObj $tinfo
                 }
                 else
                 {
@@ -89,11 +89,11 @@ Function UnProtect-SRMVM
             }
             else
             {
-                $reason = "Protection Group not found for DataStore $nom , $cle"
+                $reason = "Protection Group not found for DataStore $VMdsName , $VMdsID"
                 MakeObj(MakeErr($reason))
             }
 
-            $uinfo = $null
+            $tinfo = $null
         }
     }
 }
