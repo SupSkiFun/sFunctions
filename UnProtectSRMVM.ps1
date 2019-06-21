@@ -1,3 +1,4 @@
+using module .\sClass.psm1
 Function UnProtect-SRMVM
 {
     [cmdletbinding()]
@@ -10,57 +11,62 @@ Function UnProtect-SRMVM
     Begin
     {
         $srmED = $DefaultSrmServers.ExtensionData
-		if(!$srmED)
-		{
-			Write-Output "Terminating.  Session is not connected to a SRM server."
-			break
-		}
-        $na = "Not Attempted."
-        $stat = "IsProtected"
-        $nil = "None"
-        # Move this all to Process if SupposrtShouldProcess is used.
-
-        $pgroups = $srmED.Protection.ListProtectionGroups()
-        $pghash = @{}
-        foreach ($p in $pgroups)
+        if(!$srmED)
         {
-            $pghash.Add($p.ListProtectedDatastores().Moref,$p)
+            Write-Output "Terminating.  Session is not connected to a SRM server."
+            break
         }
+        $stat = "IsProtected"
+        $pgroups = $srmED.Protection.ListProtectionGroups()
+        $pghash = [Sclass]::MakePgHash($pgroups)
     }
 
     Process
     {
-        Function MakeObj
-        {
-            param($tinfo)
-            $lo=[pscustomobject]@{
-                VM = $v.Name
-                VMMoRef = $v.ExtensionData.Moref
-                Status = $tinfo.State
-                Error = $tinfo.Error.LocalizedMessage
-                Task = $tinfo.Name
-                TaskMoRef = $tinfo.TaskMoRef
-            }
-            $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-            $lo
-        }
+        # Function MakeObj
+        # {
+        #     param($tinfo)
+        #     $lo=[pscustomobject]@{
+        #         VM = $v.Name
+        #         VMMoRef = $v.ExtensionData.Moref
+        #         Status = $tinfo.State
+        #         Error = $tinfo.Error.LocalizedMessage
+        #         Task = $tinfo.Name
+        #         TaskMoRef = $tinfo.TaskMoRef
+        #     }
+        #     $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
+        #     $lo
+        # }
 
-        Function MakeErr
-        {
-            param($reason)
-            $tinfo = @{
-                State = $na +"  "+$reason ;
-                Name = $nil ;
-                TaskMoRef = $nil ;
-                Error = @{
-                    LocalizedMessage = $nil ;
-                }
-            }
-            $tinfo
-        }
+        # Function MakeErr
+        # {
+        #     param($reason)
+        #     $tinfo = @{
+        #         State = $na +"  "+$reason ;
+        #         Name = $nil ;
+        #         TaskMoRef = $nil ;
+        #         Error = @{
+        #             LocalizedMessage = $nil ;
+        #         }
+        #     }
+        #     $tinfo
+        # }
 
         foreach ($v in $vm)
         {
+            Function UnProtVM
+            {
+                param($targetpg,$VMmoref)
+
+                $ptask = $targetpg.UnProtectVms($VMmoref)
+                while(-not $ptask.IsComplete())
+                {
+                    Start-Sleep -Seconds 1
+                }
+                $tinfo = $ptask.getresult()
+                $tinfo
+            }
+
             $VMdsID = $v.ExtensionData.DataStore
             $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
             $VMmoref = $v.ExtensionData.Moref
@@ -71,27 +77,23 @@ Function UnProtect-SRMVM
                 $protstat = $targetpg.QueryVmProtection($VMmoref)
                 if ($protstat.Status -match $stat)
                 {
-                    $ttask = $targetpg.UnProtectVms($VMmoref)
-                    while(-not $ttask.IsComplete())
-                    {
-                        Start-Sleep -Seconds 1
-                    }
-                    $tinfo = $ttask.getresult()
-                    MakeObj $tinfo
+                    $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
+                    $lo = [Sclass]::MakeObj( $tinfo , $VMname , $VMmoref )
                 }
                 else
                 {
                     $reason = "State is $($protstat.Status).  State should be $stat."
-                    MakeObj(MakeErr($reason))
+                    $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
                 }
             }
             else
             {
                 $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
-                MakeObj(MakeErr($reason))
+                $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
             }
 
-            $tinfo = $null
+            $lo
+            $tinfo , $lo  = $null
         }
     }
 }

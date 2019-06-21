@@ -20,7 +20,7 @@ Function Protect-SRMVM
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [Sclass]::MakePgHash($pgroups)
     }
-    
+
 
     Process
     {
@@ -88,7 +88,7 @@ Function Protect-SRMVM
             }
 
             $lo
-            $tinfo = $null
+            $tinfo , $lo  = $null
         }
     }
 }
