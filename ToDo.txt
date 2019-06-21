@@ -1,0 +1,13 @@
+GetProtectedGroup
+    Alread in sfunctions
+    Test
+
+ProtectVM and UnprotectVM
+    Need Logic if more than one datastore
+    Need help info
+
+GetSRMVM
+    Refactor
+
+GetProtectedVM and GetUnprotectedVM
+    Refactor
