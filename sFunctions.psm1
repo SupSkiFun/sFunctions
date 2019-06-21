@@ -1,12 +1,12 @@
 using module .\sClass.psm1
 <#
 .SYNOPSIS
- Connects to the SRM instance of the currently connected VCenter
+Connects to the SRM instance of the currently connected VCenter
 .DESCRIPTION
- Connects to the SRM instance of the currently connected VCenter and its paired partner with the current
- session username.  Prompts for a SRM password.  Password is applied locally and remotely.
+Connects to the SRM instance of the currently connected VCenter and its paired partner with the current
+session username.  Prompts for a SRM password.  Password is applied locally and remotely.
 .EXAMPLE
- csrm
+csrm
 #>
 Function csrm
 {
@@ -17,17 +17,19 @@ Function csrm
 
 <#
 .SYNOPSIS
-Lists Protection Groups 
+Lists Protection Groups
 .DESCRIPTION
 Outputs an object of Protection Group Name, State and MoRef.
 .OUTPUTS
-PSCUSTOMOBJECT SupSkiFun.ProtectionGroupInfo
+PSCUSTOMOBJECT SupSkiFun.SRM.ProtectionGroup.Info
 .EXAMPLE
-Get-ProtectionGroup
+Output to Screen:
+Get-SRMProtectionGroup
 .EXAMPLE
-$myvar = Get-ProtectionGroup
+Output to Variable
+$myvar = Get-SRMProtectionGroup
 #>
-function Get-ProtectionGroup
+function Get-SRMProtectionGroup
 {
     Begin
     {

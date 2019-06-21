@@ -11,3 +11,11 @@ GetSRMVM
 
 GetProtectedVM and GetUnprotectedVM
     Refactor
+
+StartSRMTest
+    Modify code for no synch after Upgrade 
+    Update help with above.
+
+
+One by One go thru each AF and determine which must be run on 
+either protecting, recovery or either SRM server.  Put info in help .
