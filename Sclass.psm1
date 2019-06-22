@@ -1,4 +1,4 @@
-class SClass
+class sClass
 {
     static [hashtable] MakePgHash ([psobject] $pgroups )
     {

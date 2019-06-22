@@ -18,7 +18,7 @@ Function Protect-SRMVM
 		}
         $stat = "CanBeProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
-        $pghash = [Sclass]::MakePgHash($pgroups)
+        $pghash = [sClass]::MakePgHash($pgroups)
     }
 
 
@@ -73,18 +73,18 @@ Function Protect-SRMVM
                 if ($protstat.Status -match $stat)
                 {
                     $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                    $lo = [Sclass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                    $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
                 }
                 else
                 {
                     $reason = "State is $($protstat.Status).  State should be $stat."
-                    $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
+                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
                 }
             }
             else
             {
                 $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
-                $lo = [Sclass]::MakeObj( $reason , $VMname , $VMmoref )
+                $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
             }
 
             $lo
