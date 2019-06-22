@@ -10,7 +10,7 @@ class SClass
         return $pghash
     }
 
-    static [pscustomobject] MakeObj([string] $reason , [string] $VMname, [string] $VMmoref )
+    static [pscustomobject] MakeObj( [string] $reason , [string] $VMname, [string] $VMmoref )
     {
         $nil = "None"
         $lo = [pscustomobject]@{
