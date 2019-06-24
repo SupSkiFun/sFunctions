@@ -64,16 +64,16 @@ Function Protect-SRMVM
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
                         $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                        break
                     }
                     else
                     {
                         $reason = "State is $($protstat.Status).  State should be $stat."
                         $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                        break
                     }
+                    break
                 }
             }
+
 
             $lo
             $tinfo , $lo  = $null
