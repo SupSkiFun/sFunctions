@@ -23,8 +23,6 @@ Function UnProtect-SRMVM
 
     Process
     {
-        foreach ($v in $vm)
-        {
             Function UnProtVM
             {
                 param($targetpg,$VMmoref)
@@ -34,36 +32,46 @@ Function UnProtect-SRMVM
                 {
                     Start-Sleep -Seconds 1
                 }
-                $tinfo = $ptask.getresult()
-                $tinfo
+                $pinfo = $ptask.getresult()
+                $pinfo
             }
 
-            $VMdsID = $v.ExtensionData.DataStore
-            $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
-            $VMmoref = $v.ExtensionData.Moref
-            $VMname = $v.Name
-            if ($pghash.ContainsKey($($VMdsID)))
+            foreach ($v in $vm)
             {
-                $targetpg = $pghash.Item($($VMdsID))
-                $protstat = $targetpg.QueryVmProtection($VMmoref)
-                if ($protstat.Status -match $stat)
+                $VMdsID = $v.ExtensionData.DataStore
+                $VMmoref = $v.ExtensionData.Moref
+                $VMname = $v.Name
+                switch ($VMdsID)
+                #  Switch loops if more than one $VMdsID.
                 {
-                    $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                    $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                }
-                else
-                {
-                    $reason = "State is $($protstat.Status).  State should be $stat."
-                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                }
-            }
-            else
-            {
-                $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
-                $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-            }
+                    {$pghash.ContainsKey($($_)) -eq $false}
+                    {
+                        $VMdsName = (Get-Datastore -Id $_).Name
+                        $reason = "Protection Group not found for DataStore $VMdsName($_) ."
+                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $lo
+                    }
 
-            $lo
+                    {$pghash.ContainsKey($($_)) -eq $true}
+                    {
+                        $targetpg = $pghash.Item($($_))
+                        $protstat = $targetpg.QueryVmProtection($VMmoref)
+                        if ($protstat.Status -match $stat)
+                        {
+                            $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
+                            $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                            $lo
+                        }
+
+                        else
+                        {
+                            $reason = "State is $($protstat.Status).  State should be $stat."
+                            $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                            $lo
+                        }
+                    }
+                }
+
             $tinfo , $lo  = $null
         }
     }
