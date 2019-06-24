@@ -24,27 +24,6 @@ Function Protect-SRMVM
 
     Process
     {
-
-<#
-
-        Function ChkDS
-        {
-            param($VMdsID)
-
-            $pgla = $false
-
-            foreach ($cl in $VMdsID)
-            {
-                if ($pghash.ContainsKey($($cl)))
-                {
-                    $pgla = $true
-                }
-
-            }
-
-        }
-#>
-
         Function ProtVM
         {
             param($targetpg,$VMmoref)
@@ -66,25 +45,34 @@ Function Protect-SRMVM
             $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-            if ($pghash.ContainsKey($($VMdsID)))
+
+
+            switch ($pghash.ContainsKey($($VMdsID)))
+            # Allows looping if more than one $VMdsID.
             {
-                $targetpg = $pghash.Item($($VMdsID))
-                $protstat = $targetpg.QueryVmProtection($VMmoref)
-                if ($protstat.Status -match $stat)
+                {$false}
                 {
-                    $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                    $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                }
-                else
-                {
-                    $reason = "State is $($protstat.Status).  State should be $stat."
+                    $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
                     $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                    continue
                 }
-            }
-            else
-            {
-                $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
-                $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                {$true}
+                {
+                    $targetpg = $pghash.Item($($VMdsID))
+                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+                    if ($protstat.Status -match $stat)
+                    {
+                        $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
+                        $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                        break
+                    }
+                    else
+                    {
+                        $reason = "State is $($protstat.Status).  State should be $stat."
+                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        break
+                    }
+                }
             }
 
             $lo
