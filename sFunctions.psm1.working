@@ -5,7 +5,6 @@ Connects to the SRM instance of the currently connected VCenter
 .DESCRIPTION
 Connects to the SRM instance of the currently connected VCenter and its paired partner with the current
 session username.  Prompts for a SRM password.  Password is applied locally and remotely.
-Can be run on recovery or protected site.
 .EXAMPLE
 csrm
 #>
@@ -20,7 +19,7 @@ Function csrm
 .SYNOPSIS
 Retrieves SRM Protection Groups
 .DESCRIPTION
-Retrieves SRM Protection Groups.  Can be run on recovery or protected site.
+Retrieves SRM Protection Groups
 .OUTPUTS
 VMware.VimAutomation.Srm.Views.SrmProtectionGroup
 .EXAMPLE
@@ -62,7 +61,7 @@ function Get-SRMProtectionGroup
 .SYNOPSIS
 Retrieves SRM Recovery Plans
 .DESCRIPTION
-Retrieves SRM Recovery Plans.  Can be run on recovery or protected site.
+Retrieves SRM Recovery Plans
 .OUTPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
@@ -101,108 +100,6 @@ Function Get-SRMRecoveryPlan
     End
     {
         $plans
-    }
-}
-
-<#
-.SYNOPSIS
-Protects SRM VMs
-.DESCRIPTION
-Protects SRM VMs.  Must be run on the protected site.
-Attempts only if VM Protection State is "CanBeProtected" and an affiliated Protection Group can be located.
-.PARAMETER VM
-Output from VMWare PowerCLI Get-VM.  See Examples.
-[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
-.INPUTS
-VMWare PowerCLI VM from Get-VM:
-[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
-.OUTPUTS
-[pscustomobject] SupSkiFun.SRM.Protect.Info
-.EXAMPLE
-Protect one VM:
-Get-VM -Name SYS01 | Protect-SRMVM
-.EXAMPLE
-Protect multiple VMS, returning the object into a variable:
-$myVar = Get-VM -Name WEB* | Protect-SRMVM
-#>
-Function Protect-SRMVM
-{
-    [cmdletbinding()]
-    Param
-    (
-        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
-    )
-
-    Begin
-    {
-        $srmED = $DefaultSrmServers.ExtensionData
-		if(!$srmED)
-		{
-			Write-Output "Terminating.  Session is not connected to a SRM server."
-			break
-		}
-        $stat = "CanBeProtected"
-        $pgroups = $srmED.Protection.ListProtectionGroups()
-        $pghash = [sClass]::MakePgHash($pgroups)
-    }
-
-
-    Process
-    {
-        Function ProtVM
-        {
-            param($targetpg,$VMmoref)
-
-            $vspec = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
-            $vspec.Vm = $VMmoref
-            $ptask = $targetpg.ProtectVms($vspec)
-            while(-not $ptask.IsComplete())
-            {
-                Start-Sleep -Seconds 1
-            }
-            $pinfo = $ptask.getresult()
-            $pinfo
-        }
-
-        foreach ($v in $vm)
-        {
-            $VMdsID = $v.ExtensionData.DataStore
-            $VMmoref = $v.ExtensionData.Moref
-            $VMname = $v.Name
-            switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
-            {
-                {$pghash.ContainsKey($($_)) -eq $false}
-                {
-                    $VMdsName = (Get-Datastore -Id $_).Name
-                    $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                    $lo
-                }
-
-                {$pghash.ContainsKey($($_)) -eq $true}
-                {
-                    $targetpg = $pghash.Item($($_))
-                    $protstat = $targetpg.QueryVmProtection($VMmoref)
-                    if ($protstat.Status -match $stat)
-                    {
-                        $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                        $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                        $lo
-                    }
-                    else
-                    {
-                        $reason = "State is $($protstat.Status).  State should be $stat."
-                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                        $lo
-                    }
-                    break
-                }
-            }
-
-            $tinfo , $lo  = $null
-        }
     }
 }
 
@@ -261,8 +158,8 @@ Function Send-SRMDismiss
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.
 .DESCRIPTION
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan,
-ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  Can be run on recovery or protected site. 
-Note:  DataStore Name is Not Available from the Recovery Site; it is only available from the Protection Site.
+ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  DataStore Name is
+Not Available when run from the Recovery Site; it is only available when run from the Protection Site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .INPUTS
@@ -497,106 +394,6 @@ Function Stop-SRMTest
                     Write-Output "`n`t`t$mesg`n"
                 }
             }
-        }
-    }
-}
-
-<#
-.SYNOPSIS
-UnProtects SRM VMs
-.DESCRIPTION
-UnProtects SRM VMs.  Must be run on the protected site.
-Attempts only if VM Protection State is "IsProtected" and an affiliated Protection Group can be located.
-.PARAMETER VM
-Output from VMWare PowerCLI Get-VM.  See Examples.
-[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
-.INPUTS
-VMWare PowerCLI VM from Get-VM:
-[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
-.OUTPUTS
-[pscustomobject] SupSkiFun.SRM.Protect.Info
-.EXAMPLE
-UnProtect one VM:
-Get-VM -Name SYS01 | UnProtect-SRMVM
-.EXAMPLE
-UnProtect multiple VMS, returning the object into a variable:
-$myVar = Get-VM -Name WEB* | UnProtect-SRMVM
-#>
-Function UnProtect-SRMVM
-{
-    [cmdletbinding()]
-    Param
-    (
-        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
-    )
-
-    Begin
-    {
-        $srmED = $DefaultSrmServers.ExtensionData
-        if(!$srmED)
-        {
-            Write-Output "Terminating.  Session is not connected to a SRM server."
-            break
-        }
-        $stat = "IsProtected"
-        $pgroups = $srmED.Protection.ListProtectionGroups()
-        $pghash = [sClass]::MakePgHash($pgroups)
-    }
-
-    Process
-    {
-            Function UnProtVM
-            {
-                param($targetpg,$VMmoref)
-
-                $ptask = $targetpg.UnProtectVms($VMmoref)
-                while(-not $ptask.IsComplete())
-                {
-                    Start-Sleep -Seconds 1
-                }
-                $pinfo = $ptask.getresult()
-                $pinfo
-            }
-
-            foreach ($v in $vm)
-            {
-                $VMdsID = $v.ExtensionData.DataStore
-                $VMmoref = $v.ExtensionData.Moref
-                $VMname = $v.Name
-                switch ($VMdsID)
-                #  Switch loops if more than one $VMdsID.
-                {
-                    {$pghash.ContainsKey($($_)) -eq $false}
-                    {
-                        $VMdsName = (Get-Datastore -Id $_).Name
-                        $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                        $lo
-                    }
-
-                    {$pghash.ContainsKey($($_)) -eq $true}
-                    {
-                        $targetpg = $pghash.Item($($_))
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
-                        if ($protstat.Status -match $stat)
-                        {
-                            $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                            $lo
-                        }
-
-                        else
-                        {
-                            $reason = "State is $($protstat.Status).  State should be $stat."
-                            $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                            $lo
-                        }
-                        break
-                    }
-                }
-
-            $tinfo , $lo  = $null
         }
     }
 }

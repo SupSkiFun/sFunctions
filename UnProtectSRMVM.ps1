@@ -1,9 +1,10 @@
+using module .\sClass.psm1
 <#
 .SYNOPSIS
-UnProtects SRM VM
+UnProtects SRM VMs
 .DESCRIPTION
-UnProtects SRM VM.  Must be run on the protected site.
-Attempts only if VM Protection State is "IsProtected" and Protection Group can be located.
+UnProtects SRM VMs.  Must be run on the protected site.
+Attempts only if VM Protection State is "IsProtected" and an affiliated Protection Group can be located.
 .PARAMETER VM
 Output from VMWare PowerCLI Get-VM.  See Examples.
 [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
@@ -11,7 +12,7 @@ Output from VMWare PowerCLI Get-VM.  See Examples.
 VMWare PowerCLI VM from Get-VM:
 [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
 .OUTPUTS
-pscustomobject SupSkiFun.SRM.Protect.Info
+[pscustomobject] SupSkiFun.SRM.Protect.Info
 .EXAMPLE
 UnProtect one VM:
 Get-VM -Name SYS01 | UnProtect-SRMVM
@@ -19,8 +20,6 @@ Get-VM -Name SYS01 | UnProtect-SRMVM
 UnProtect multiple VMS, returning the object into a variable:
 $myVar = Get-VM -Name WEB* | UnProtect-SRMVM
 #>
-
-using module .\sClass.psm1
 Function UnProtect-SRMVM
 {
     [cmdletbinding()]
@@ -91,6 +90,7 @@ Function UnProtect-SRMVM
                             $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
                             $lo
                         }
+                        break
                     }
                 }
 

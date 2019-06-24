@@ -1,9 +1,10 @@
+using module .\sClass.psm1
 <#
 .SYNOPSIS
-Protects SRM VM
+Protects SRM VMs
 .DESCRIPTION
-Protects SRM VM.  Must be run on the protected site.
-Attempts only if VM Protection State is "CanBeProtected" and Protection Group can be located.
+Protects SRM VMs.  Must be run on the protected site.
+Attempts only if VM Protection State is "CanBeProtected" and an affiliated Protection Group can be located.
 .PARAMETER VM
 Output from VMWare PowerCLI Get-VM.  See Examples.
 [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
@@ -11,7 +12,7 @@ Output from VMWare PowerCLI Get-VM.  See Examples.
 VMWare PowerCLI VM from Get-VM:
 [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
 .OUTPUTS
-pscustomobject SupSkiFun.SRM.Protect.Info
+[pscustomobject] SupSkiFun.SRM.Protect.Info
 .EXAMPLE
 Protect one VM:
 Get-VM -Name SYS01 | Protect-SRMVM
@@ -19,8 +20,6 @@ Get-VM -Name SYS01 | Protect-SRMVM
 Protect multiple VMS, returning the object into a variable:
 $myVar = Get-VM -Name WEB* | Protect-SRMVM
 #>
-
-using module .\sClass.psm1
 Function Protect-SRMVM
 {
     [cmdletbinding()]
