@@ -48,17 +48,21 @@ Function Protect-SRMVM
 
 
             switch ($pghash.ContainsKey($($VMdsID)))
-            # Allows looping if more than one $VMdsID.
+            #  Allows looping if more than one $VMdsID.  Right?  :)
+            #  Need to test break / continues
+            #  Need to test $_  ... works in loop?
             {
                 {$false}
                 {
-                    $reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
+                    #$reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
+                    $reason = "Protection Group not found for DataStore $VMdsName($_) ."
                     $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
                     continue
                 }
                 {$true}
                 {
-                    $targetpg = $pghash.Item($($VMdsID))
+                    #$targetpg = $pghash.Item($($VMdsID))
+                    $targetpg = $pghash.Item($($_))
                     $protstat = $targetpg.QueryVmProtection($VMmoref)
                     if ($protstat.Status -match $stat)
                     {
