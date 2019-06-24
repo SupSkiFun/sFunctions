@@ -41,28 +41,27 @@ Function Protect-SRMVM
 
         foreach ($v in $vm)
         {
-            # First two would have to go in nested loop.  Bottom two in this loop.
             $VMdsID = $v.ExtensionData.DataStore
-            $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
 
             # maybe switch just on $VMdsID or revert to for loop starting
             # driectly above the upper for loop?
             # don't think below is going to work.
-            switch ($pghash.ContainsKey($($VMdsID)))
+            switch ($VMdsID)
             #  Allows looping if more than one $VMdsID.  Right?  :)
-            #  Need to test break / continues
-            #  Need to test $_  ... works in loop?
+            #  Is the continue returning to the for loop?  Despite all of this, still just processing one $VMdsID!
+
             {
-                {$false}
+                {$pghash.ContainsKey($($_)) -eq $false}
                 {
                     #$reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
+                    $VMdsName = (Get-Datastore -Id $_).Name
                     $reason = "Protection Group not found for DataStore $VMdsName($_) ."
                     $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
                     continue
                 }
-                {$true}
+                {$pghash.ContainsKey($($_)) -eq $true}
                 {
                     #$targetpg = $pghash.Item($($VMdsID))
                     $targetpg = $pghash.Item($($_))
