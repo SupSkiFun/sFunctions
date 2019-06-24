@@ -48,7 +48,8 @@ function Get-SRMProtectionGroup
 			$lo=[pscustomobject]@{
 				Name = $protgrp.GetInfo().Name
 				State = $protgrp.GetProtectionState()
-				MoRef = $protgrp.MoRef
+                MoRef = $protgrp.MoRef
+                Object = $protgrp
 			}
 			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.ProtectionGroup.Info')
 			$lo

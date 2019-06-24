@@ -44,44 +44,37 @@ Function Protect-SRMVM
             $VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-
-            # maybe switch just on $VMdsID or revert to for loop starting
-            # driectly above the upper for loop?
-            # don't think below is going to work.
             switch ($VMdsID)
-            #  Allows looping if more than one $VMdsID.  Right?  :)
-            #  Is the continue returning to the for loop?  Despite all of this, still just processing one $VMdsID!
-
+            #  Switch loops if more than one $VMdsID.
             {
                 {$pghash.ContainsKey($($_)) -eq $false}
                 {
-                    #$reason = "Protection Group not found for DataStore $VMdsName($VMdsID) ."
                     $VMdsName = (Get-Datastore -Id $_).Name
                     $reason = "Protection Group not found for DataStore $VMdsName($_) ."
                     $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                    continue
+                    $lo
                 }
+
                 {$pghash.ContainsKey($($_)) -eq $true}
                 {
-                    #$targetpg = $pghash.Item($($VMdsID))
                     $targetpg = $pghash.Item($($_))
                     $protstat = $targetpg.QueryVmProtection($VMmoref)
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
                         $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                        $lo
                     }
                     else
                     {
                         $reason = "State is $($protstat.Status).  State should be $stat."
                         $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $lo
                     }
                     break
                 }
             }
 
-
-            $lo
             $tinfo , $lo  = $null
         }
     }
