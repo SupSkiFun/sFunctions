@@ -17,44 +17,44 @@ Function csrm
 
 <#
 .SYNOPSIS
-Lists Protection Groups
+Retrieves SRM Protection Groups
 .DESCRIPTION
-Outputs an object of Protection Group Name, State and MoRef.
+Retrieves SRM Protection Groups
 .OUTPUTS
-PSCUSTOMOBJECT SupSkiFun.SRM.ProtectionGroup.Info
+VMware.VimAutomation.Srm.Views.SrmProtectionGroup
 .EXAMPLE
-Output to Screen:
-Get-SRMProtectionGroup
+Place all the SRM Protection Groups into a variable:
+$allPG = Get-SRMProtectionGroup
 .EXAMPLE
-Output to Variable
-$myvar = Get-SRMProtectionGroup
+Place SRM Protection Groups matching a criteria into a variable:
+$myPG = Get-SRMProtectionGroup | Where-Object -Property Name -Match "DS1"
 #>
 function Get-SRMProtectionGroup
 {
     Begin
     {
-        $srmED = $DefaultSrmServers.ExtensionData
+        $srmED =  $DefaultSrmServers.ExtensionData
         if(!$srmED)
-        {
-            Write-Output "Terminating.  Session is not connected to a SRM server."
-            break
-        }
-        $protgrps=$srmED.Protection.ListProtectionGroups()
+		{
+			Write-Output "Terminating.  Session is not connected to a SRM server."
+			break
+		}
+        $pgrps = $srmED.Protection.ListProtectionGroups()
     }
+
     Process
 	{
-		foreach ($protgrp in $protgrps)
-		{
-			$lo=[pscustomobject]@{
-				Name = $protgrp.GetInfo().Name
-				State = $protgrp.GetProtectionState()
-                MoRef = $protgrp.MoRef
-                Object = $protgrp
-			}
-			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.ProtectionGroup.Info')
-			$lo
-		}
-	}
+        foreach ($pgrp in $pgrps)
+        {
+            $pnom = $pgrp.GetInfo().Name
+            Add-Member -InputObject $pgrp -MemberType NoteProperty -Name "Name" -Value $pnom
+        }
+    }
+    
+    End
+    {
+        $pgrps
+    }
 }
 
 <#
@@ -69,7 +69,7 @@ Place all the SRM Recovery Plans into a variable:
 $allRP = Get-SRMRecoveryPlan
 .EXAMPLE
 Place SRM Recovery Plans matching a criteria into a variable:
-$myRP = Get-SRMRecoveryPlan | Where-Object -Property Name -Match "CL07*"
+$myRP = Get-SRMRecoveryPlan | Where-Object -Property Name -Match "CL07"
 #>
 
 Function Get-SRMRecoveryPlan
@@ -80,6 +80,11 @@ Function Get-SRMRecoveryPlan
     Begin
     {
         $srmED =  $DefaultSrmServers.ExtensionData
+        if(!$srmED)
+		{
+			Write-Output "Terminating.  Session is not connected to a SRM server."
+			break
+		}
         $plans = $srmED.Recovery.ListPlans()
     }
 
