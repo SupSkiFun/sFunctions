@@ -41,12 +41,15 @@ Function Protect-SRMVM
 
         foreach ($v in $vm)
         {
+            # First two would have to go in nested loop.  Bottom two in this loop.
             $VMdsID = $v.ExtensionData.DataStore
             $VMdsName = $v.ExtensionData.Config.DataStoreURL.Name
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
 
-
+            # maybe switch just on $VMdsID or revert to for loop starting
+            # driectly above the upper for loop?
+            # don't think below is going to work.
             switch ($pghash.ContainsKey($($VMdsID)))
             #  Allows looping if more than one $VMdsID.  Right?  :)
             #  Need to test break / continues
