@@ -51,7 +51,7 @@ function Get-SRMProtectionGroup
             Add-Member -InputObject $pgrp -MemberType NoteProperty -Name "Name" -Value $pnom
         }
     }
-    
+
     End
     {
         $pgrps
@@ -102,6 +102,82 @@ Function Get-SRMRecoveryPlan
     {
         $plans
     }
+}
+
+<#
+.SYNOPSIS
+Obtains SRM VM Protection Information
+.DESCRIPTION
+Returns an object of VM, VMMoRef, Status, DataStore, ProtectionGroup, RecoveryPlan, ProtectedVM and PeerProtectedVm.
+Run on protected site to obtain full information.  Can be run on recovery site, but information is limited.
+.PARAMETER VM
+Output from VMWare PowerCLI Get-VM.  See Examples.
+[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
+.INPUTS
+VMWare PowerCLI VM from Get-VM:
+[VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
+.OUTPUTS
+[pscustomobject] SupSkiFun.SRM.VM.Info
+.EXAMPLE
+Returns object for one VM to the screen:
+Get-VM -Name Server01 | Get-SRMVM
+.EXAMPLE
+Places an object of several VMs into a variable:
+$myVar = Get-VM -Name Test* | Get-SRMVM
+#>
+function Get-SRMVM
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+	)
+
+    Begin
+    {
+        $srmED = $DefaultSrmServers.ExtensionData
+		if(!$srmED)
+		{
+			Write-Output "Terminating.  Session is not connected to a SRM server."
+			break
+		}
+        $pgroups = $srmED.Protection.ListProtectionGroups()
+		$pghash = [sClass]::MakePgHash($pgroups)
+		$nd = "No Data"
+	}
+
+	Process
+	{
+		foreach ($v in $vm)
+		{
+
+			$VMdsID = $v.ExtensionData.DataStore
+            $VMmoref = $v.ExtensionData.Moref
+            $VMname = $v.Name
+			switch ($VMdsID)
+            #  Switch loops if more than one $VMdsID.
+            {
+				{$pghash.ContainsKey($($_)) -eq $false}
+				{
+					$VMdsName = (Get-Datastore -Id $_).Name
+					$reason = "Protection Group not found for DataStore $VMdsName($_) ."
+					$lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref , $VMdsName , $nd )
+					$lo
+				}
+
+                {$pghash.ContainsKey($($_)) -eq $true}
+                {
+                    $targetpg = $pghash.Item($($_))
+					$protstat = $targetpg.QueryVmProtection($VMmoref)
+					$VMdsName = (Get-Datastore -Id $_).Name
+					$lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
+					$lo
+				}
+			}
+			$protstat , $lo  = $null
+		}
+	}
 }
 
 <#
@@ -261,7 +337,7 @@ Function Send-SRMDismiss
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.
 .DESCRIPTION
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan,
-ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  Can be run on recovery or protected site. 
+ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  Can be run on recovery or protected site.
 Note:  DataStore Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
