@@ -1,7 +1,7 @@
 Function Get-SRMUnProtectedVM{}
 
 <#
-Below is for MeadowCroft - need to test and tailor
+Below is from MeadowCroft - need to test and tailor
 
 #>
 
