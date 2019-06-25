@@ -3,8 +3,9 @@
 Returns an object of Protected VMs.
 .DESCRIPTION
 Returns an object of Protected VMs from submitted Protection Groups.
-Returns an object of VM, MoRef, Protection Group, State, NeedsConfig and Faults.
-NEED INPUT ABOUT HOW RUN ON PORTECTED OR RECVOERY SITE!!!
+Returns an object of VM, VMMoRef, ProtectedVM, PeerProtectedVm, ProtectionGroup, VMState,
+PeerState, NeedsConfig and Faults.  Can be run on recovery or protected site.
+Note:  VM Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  See Examples.
 .INPUTS
@@ -18,7 +19,7 @@ $myInfo = $myPG | Show-SRMProtectedVM
 .EXAMPLE
 Return an object of VMs from all Protection Groups into the myInfo variable:
 $myPG = Get-SRMProtectionGroup
-$myInfo = $myPG | Show-SRMProtectedVM 
+$myInfo = $myPG | Show-SRMProtectedVM
 #>
 function Show-SRMProtectedVM
 {
@@ -29,22 +30,34 @@ function Show-SRMProtectedVM
         [VMware.VimAutomation.Srm.Views.SrmProtectionGroup[]] $ProtectionGroup
 	)
 
+	Begin
+    {
+        $nota = "Not Available on Recovery Site; only available from the Protection Site"
+    }
+
 	Process
 	{
 		foreach ($pgrp in $ProtectionGroup)
 		{
 			$pvms = $pgrp.ListProtectedVms()
-			switch ($pgrp.GetProtectionState())
-			{
-				Shadowing
-				Ready
-			}
+			$pgst = $pgrp.GetProtectionState()
 			foreach ($pvm in $pvms)
 			{
-			   	$pvm.vm.UpdateViewData()
+				switch ($pgst)
+				{
+					'Ready'
+					{
+						$pvm.vm.UpdateViewData()
+						$vmnom = $pvm.Vm.Config.Name
+					}
+					'Shadowing'
+					{
+						$vmnom = $nota
+					}
+				}
+
 				$lo = [pscustomobject]@{
-					#VMName = $pvm.vm.config.name
-					VM = $pvm.Vm.Config.Name
+					VM = $vmnom
 					VMMoRef = $pvm.Vm.Moref
 					ProtectedVM = $pvm.ProtectedVm
 					PeerProtectedVm = $pvm.PeerProtectedVm
