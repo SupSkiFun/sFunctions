@@ -337,7 +337,8 @@ Function Send-SRMDismiss
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.
 .DESCRIPTION
 Shows Relationship amongst Recovery Plans, Protection Groups, and DataStores.  Returns an object of RecoveryPlan,
-ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, and DataStoreMoRef.  Can be run on recovery or protected site.
+ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, DataStoreMoRef, PeerMoRef and PeerState.  
+Can be run on recovery or protected site.
 Note:  DataStore Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
@@ -375,6 +376,7 @@ Function Show-SRMRelationship
             $ap = $plan.GetInfo()
             $pg = $ap.ProtectionGroups.GetInfo().Name
             $ar = $ap.ProtectionGroups.ListProtectedDatastores().Moref
+            $pi = $plan.GetPeer()
 
             if ($ap.State -match "Protecting")
             {
@@ -393,6 +395,8 @@ Function Show-SRMRelationship
                 RecoveryPlanMoRef = $plan.MoRef
                 ProtectionGroupMoRef = $ap.ProtectionGroups.Moref
                 DataStoreMoRef = $ar
+                PeerMoRef = $pi.GroupMoRef
+                PeerState = $pi.State
             }
             $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Info')
             $lo

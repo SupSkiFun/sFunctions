@@ -1,16 +1,9 @@
 Function Get-SRMProtectedVM{}
-
-<#
-
-BELOW is the old AF - this needs to be refactored!
-
-#>
-
 <#
 .SYNOPSIS
-Outputs an object of Protected VMs and relevant information.
+Returns an object of Protected VMs.
 .DESCRIPTION
-Outputs an object of Protected VM, MoRef, Protection Group, State, Config Status and Faults from SRM Server.
+Returns an object of Protected VM, MoRef, Protection Group, State, Config Status and Faults.
 Must be connected to SRM server.
 .OUTPUTS
 PSCUSTOMOBJECT SupSkiFun.ProtectedVMInfo
@@ -23,13 +16,13 @@ function Get-ProtectedVM
 {
 	Process
 	{
-		$srm=$global:DefaultSrmServers
+		$srmed = $DefaultSrmServers.extensiondata
 		if(!$srm)
 		{
 			Write-Host -ForegroundColor Cyan "Connect to an SRM server first"
 			break
 		}
-		$srmed = $srm.extensiondata
+
 		$pgrps = $srmed.Protection.ListProtectionGroups()
 		foreach ($pgrp in $pgrps)
 		{
