@@ -395,7 +395,7 @@ Function Show-SRMRelationship
                 RecoveryPlanMoRef = $plan.MoRef
                 ProtectionGroupMoRef = $ap.ProtectionGroups.Moref
                 DataStoreMoRef = $ar
-                PeerMoRef = $pi.GroupMoRef
+                PeerMoRef = $pi.PlanMoRef
                 PeerState = $pi.State
             }
             $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Info')
