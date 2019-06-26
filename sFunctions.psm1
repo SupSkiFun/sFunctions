@@ -1,4 +1,5 @@
 using module .\sClass.psm1
+
 <#
 .SYNOPSIS
 Connects to the SRM instance of the currently connected VCenter
