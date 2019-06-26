@@ -379,12 +379,12 @@ function Show-SRMProtectedVM
 			{
 				switch ($pgst)
 				{
-					'Ready'
+					Ready
 					{
 						$pvm.vm.UpdateViewData()
 						$vmnom = $pvm.Vm.Config.Name
 					}
-					'Shadowing'
+					Shadowing
 					{
 						$vmnom = $nota
 					}
