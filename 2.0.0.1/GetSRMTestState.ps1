@@ -2,7 +2,7 @@
 .SYNOPSIS
 Returns current state of SRM Test.
 .DESCRIPTION
-Returns current state of SRM Test.  CAN BE RUN WHERE???  Must be run on the recovery site.
+Returns current state of SRM Test.  Can be run on the recovery or protected site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .INPUTS

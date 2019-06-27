@@ -19,7 +19,7 @@ $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest -SyncData=$False
 #>
 
-Function Start-SRMTestNEW
+Function Start-SRMTestNEW   # RENAME THIS!!   Needs full testing!!
 {
     [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = "High")]
     Param
