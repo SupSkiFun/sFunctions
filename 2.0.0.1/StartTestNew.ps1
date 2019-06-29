@@ -34,7 +34,7 @@ Function Start-SRMTestNEW   # RENAME THIS!!   Needs full testing!!
     {
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode] $RecoveryMode = [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode]::Test
         $ReqState = "Ready"
-        $rpOpt = New-Object VMware.VimAutomation.Srm.Views.SrmRecoveryOptions
+        $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
         $rpOpt.SyncData = $SyncData
     }
 
