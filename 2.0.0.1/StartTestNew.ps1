@@ -11,23 +11,25 @@ Defaults to False.  Can be set True to Sync Data.
 .INPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
+Start SRM Test meeting a selection criteria:
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest
 .EXAMPLE
-Future Functionality Below:
-$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
-$p | Start-SRMTest -SyncData=$False
+Start SRM Test(s) meeting a selection criteria, synchronizing storage:
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -match "ProdWeb*"
+$p | Start-SRMTest -SyncData True
 #>
 
 Function Start-SRMTestNEW   # Start-SRMTest
 {
-    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = "High")]
+    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = 'High')]
     Param
     (
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [bool] $SyncData = $False
+        [Parameter (ValidateSet = 'True' , 'False')]
+        $SyncData = "False"
     )
 
     Begin
@@ -35,7 +37,7 @@ Function Start-SRMTestNEW   # Start-SRMTest
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode] $RecoveryMode = [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode]::Test
         $ReqState = "Ready"
         $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
-        $rpOpt.SyncData = $SyncData
+        $rpOpt.SyncData = [bool] $SyncData
     }
 
     Process
