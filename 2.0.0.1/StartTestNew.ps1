@@ -28,8 +28,7 @@ Function Start-SRMTestNEW   # Start-SRMTest
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [Parameter (ValidateSet = 'True' , 'False')]
-        $SyncData = "False"
+        [Parameter (ValidateSet = 'True' , 'False')] $SyncData = 'False'
     )
 
     Begin
