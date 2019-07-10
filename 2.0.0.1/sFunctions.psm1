@@ -15,7 +15,7 @@ Function MakeTobj
         TaskMoRef = $tinfo.TaskMoRef
     }
     $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-    return $lo
+    $lo
 }
 
 <#
