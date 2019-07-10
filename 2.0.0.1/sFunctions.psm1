@@ -1,11 +1,11 @@
 using module .\sClass.psm1
 
-Function MakeTobj 
+Function MakeTobj
 {
     <#  Helper Function used by Protect-SRMVM and UnProtect-SRMVM   #>
-    
+
     param($tinfo , $VMname, $VMmoref )
-    
+
     $lo = [pscustomobject]@{
         VM = $VMname
         VMMoRef = $VMmoref

@@ -58,7 +58,7 @@ class sClass
         return $lo
     }
 
-    <#    
+    <#
     Removed as Type VMware.VimAutomation.Srm.Views.SrmTaskInfo created a warning in the script analyzer.
     Function MakeTObj is in sFunctions.psm1 to handle this object creation.
 
