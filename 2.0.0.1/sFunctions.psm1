@@ -1,5 +1,23 @@
 using module .\sClass.psm1
 
+Function MakeTobj 
+{
+    <#  Helper Function used by Protect-SRMVM and UnProtect-SRMVM   #>
+    
+    param($tinfo , $VMname, $VMmoref )
+    
+    $lo = [pscustomobject]@{
+        VM = $VMname
+        VMMoRef = $VMmoref
+        Status = $tinfo.State
+        Error = $tinfo.Error.LocalizedMessage
+        Task = $tinfo.Name
+        TaskMoRef = $tinfo.TaskMoRef
+    }
+    $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
+    return $lo
+}
+
 <#
 .SYNOPSIS
 Connects to the SRM instance of the currently connected VCenter
@@ -304,7 +322,7 @@ Function Protect-SRMVM
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                        $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                        $lo = MakeTObj( $tinfo , $VMname , $VMmoref )
                         $lo
                     }
                     else
@@ -612,8 +630,8 @@ Function Start-SRMTest
         <#
         Below two lines for creating the option to synch or not.  Believe exposed in SRM 6.5 API
         Also modify the entry in the process block.
-        $rpOpt = New-Object VMware.VimAutomation.Srm.Views.SrmRecoveryOptions
-        $rpOpt.SyncData = $SyncData
+        $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
+        $rpOpt.SyncData = [bool] $SyncData
         #>
 
     }
@@ -778,7 +796,7 @@ Function UnProtect-SRMVM
                         if ($protstat.Status -match $stat)
                         {
                             $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                            $lo = MakeTObj( $tinfo , $VMname , $VMmoref )
                             $lo
                         }
 

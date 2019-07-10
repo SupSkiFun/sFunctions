@@ -25,20 +25,6 @@ class sClass
         return $lo
     }
 
-    static [pscustomobject] MakeObj( [VMware.VimAutomation.Srm.Views.SrmTaskInfo] $tinfo , [string] $VMname, [string] $VMmoref )
-    {
-        $lo = [pscustomobject]@{
-            VM = $VMname
-            VMMoRef = $VMmoref
-            Status = $tinfo.State
-            Error = $tinfo.Error.LocalizedMessage
-            Task = $tinfo.Name
-            TaskMoRef = $tinfo.TaskMoRef
-        }
-        $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-        return $lo
-    }
-
     static [pscustomobject] MakeObj( [psobject] $protstat , [string] $VMname, [string] $VMmoref , [string] $VMdsName)
     {
         $lo = [pscustomobject]@{
@@ -71,4 +57,23 @@ class sClass
         Write-Host "bogus"
         return $lo
     }
+
+    <#    
+    Removed as Type VMware.VimAutomation.Srm.Views.SrmTaskInfo created a warning in the script analyzer.
+    Function MakeTObj is in sFunctions.psm1 to handle this object creation.
+
+    static [pscustomobject] MakeObj( [VMware.VimAutomation.Srm.Views.SrmTaskInfo] $tinfo , [string] $VMname, [string] $VMmoref )
+    {
+        $lo = [pscustomobject]@{
+            VM = $VMname
+            VMMoRef = $VMmoref
+            Status = $tinfo.State
+            Error = $tinfo.Error.LocalizedMessage
+            Task = $tinfo.Name
+            TaskMoRef = $tinfo.TaskMoRef
+        }
+        $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
+        return $lo
+    }
+    #>
 }
