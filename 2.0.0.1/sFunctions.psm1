@@ -322,7 +322,7 @@ Function Protect-SRMVM
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                        $lo = MakeTObj( $tinfo , $VMname , $VMmoref )
+                        $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
                     else
@@ -796,7 +796,7 @@ Function UnProtect-SRMVM
                         if ($protstat.Status -match $stat)
                         {
                             $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = MakeTObj( $tinfo , $VMname , $VMmoref )
+                            $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                             $lo
                         }
 
