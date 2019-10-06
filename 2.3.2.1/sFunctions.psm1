@@ -582,41 +582,36 @@ Does not attempt if submitted plan is not in a Ready state.  Must be run on the 
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
-Future:  Defaults to False.  Can be set True to Sync Data.  Believe exposed in SRM 6.5 API
+Defaults to False.  Can be set True to Sync Data.
 .INPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
+Start SRM Test meeting a selection criteria:
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest
 .EXAMPLE
-Future Functionality Below:
-$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
-$p | Start-SRMTest -SyncData=$False
+Start SRM Test(s) meeting a selection criteria, synchronizing storage:
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -match "ProdWeb*"
+$p | Start-SRMTest -SyncData True
 #>
 
 Function Start-SRMTest
 {
-    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = "High")]
+    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = 'High')]
     Param
     (
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [bool] $SyncData = $False
+        [Parameter (ValidateSet = 'True' , 'False')] $SyncData = 'False'
     )
 
     Begin
     {
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode] $RecoveryMode = [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode]::Test
         $ReqState = "Ready"
-
-        <#
-        Below two lines for creating the option to synch or not.  Believe exposed in SRM 6.5 API
-        Also modify the entry in the process block.
         $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
         $rpOpt.SyncData = [bool] $SyncData
-        #>
-
     }
 
     Process
@@ -629,12 +624,7 @@ Function Start-SRMTest
             {
                 if ($rpinfo.State -eq $ReqState)
                 {
-                    <#
-                    With Synch false purposely set, API 6.5 or Higher hopefully.
                     $rp.Start($RecoveryMode,$rpOpt)
-                    #>
-
-                    $rp.Start($RecoveryMode)
                 }
 
                 else
