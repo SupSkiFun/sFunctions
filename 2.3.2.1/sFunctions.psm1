@@ -603,7 +603,7 @@ Function Start-SRMTest
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [Parameter (ValidateSet = 'True' , 'False')] $SyncData = 'False'
+        [ValidateSet ("True" , "False")] $SyncData
     )
 
     Begin
@@ -636,7 +636,6 @@ Function Start-SRMTest
         }
     }
 }
-
 <#
 .SYNOPSIS
 Stops / cancels an SRM Test.
