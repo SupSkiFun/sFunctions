@@ -583,7 +583,7 @@ Does not attempt if submitted plan is not in a Ready state.  Must be run on the 
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
 If specified, the test will execute Step 1 Synchronize Storage.
-If not specified (the default) Step 1 Synchronize Storage is skipped.
+If not specified Step 1 Synchronize Storage is skipped.
 .INPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
@@ -593,7 +593,7 @@ $p | Start-SRMTest
 .EXAMPLE
 Start SRM Test(s) meeting a selection criteria, synchronizing storage:
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -match "ProdWeb*"
-$p | Start-SRMTest -SyncData True
+$p | Start-SRMTest -SyncData
 #>
 
 Function Start-SRMTest
