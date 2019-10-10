@@ -28,7 +28,7 @@ Function Start-SRMTestNEW   # Start-SRMTest
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [ValidateSet ("True" , "False")] $SyncData
+        [switch] $SyncData
     )
 
     Begin
@@ -36,7 +36,14 @@ Function Start-SRMTestNEW   # Start-SRMTest
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode] $RecoveryMode = [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode]::Test
         $ReqState = "Ready"
         $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
-        $rpOpt.SyncData = [bool] $SyncData
+        if ($SyncData)
+        {
+            $rpOpt.SyncData = $true
+        }
+        else
+        {
+            $rpOpt.SyncData = $false
+        }
     }
 
     Process
