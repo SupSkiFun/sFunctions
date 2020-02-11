@@ -18,6 +18,7 @@ class sClasss   # Trailing S
         }
         return $shash
     }
+
     static [hashtable] MakePgHash ([psobject] $pgroups )
     {
         $pghash = @{}
@@ -27,6 +28,7 @@ class sClasss   # Trailing S
         }
         return $pghash
     }
+
     static [pscustomobject] MakeObj( [string] $reason , [string] $VMname, [string] $VMmoref )
     {
         $nil = "None"
@@ -41,6 +43,7 @@ class sClasss   # Trailing S
         $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
         return $lo
     }
+
     static [pscustomobject] MakeObj( [psobject] $protstat , [string] $VMname, [string] $VMmoref , [string] $VMdsName)
     {
         $lo = [pscustomobject]@{
@@ -56,6 +59,7 @@ class sClasss   # Trailing S
         $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.VM.Info')
         return $lo
     }
+    
     static [pscustomobject] MakeObj( [string] $reason , [string] $VMname, [string] $VMmoref , [string] $VMdsName , [string] $nd )
     {
         $lo = [pscustomobject]@{
