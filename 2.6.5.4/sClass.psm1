@@ -1,5 +1,24 @@
 class sClass
 {
+    static [hashtable] MakeHash( [string] $quoi )
+    {
+        $src = $null
+        $shash = @{}
+
+        switch ($quoi)
+        {
+            ds { $src = Get-Datastore -Name * }
+            ex { $src = Get-VMHost -Name * }
+            vm { $src = Get-VM -Name * }
+        }
+
+        foreach ($s in $src)
+        {
+            $shash.add($s.Id , $s.Name)
+        }
+        return $shash
+    }
+
     static [hashtable] MakePgHash ([psobject] $pgroups )
     {
         $pghash = @{}

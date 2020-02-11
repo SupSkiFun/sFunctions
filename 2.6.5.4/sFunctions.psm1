@@ -184,7 +184,8 @@ function Get-SRMVM
 			break
 		}
         $pgroups = $srmED.Protection.ListProtectionGroups()
-		$pghash = [sClass]::MakePgHash($pgroups)
+        $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
 		$nd = "No Data"
 	}
 
@@ -196,27 +197,31 @@ function Get-SRMVM
 			$VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-			switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
+            foreach ($vmds in $VMdsID)
             {
-				{$pghash.ContainsKey($($_)) -eq $false}
+                $ici = $pghash.GetEnumerator().where({$_.value -eq $vmds})
+
+                if ($ici)
+                {
+                    {
+                        $targetpg = $pghash.Item($($_))  # change to $vmds?
+                        $protstat = $targetpg.QueryVmProtection($VMmoref)
+                        $VMdsName = $dshash.$vmds  # Need a subexpression?
+                        $lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
+                        $lo
+                    }
+                }
+
+                else
 				{
-					$VMdsName = (Get-Datastore -Id $_).Name
-					$reason = "Protection Group not found for DataStore $VMdsName($_) ."
+					$VMdsName = $dshash.$vmds
+					$reason = "Protection Group not found for DataStore $VMdsName."
 					$lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref , $VMdsName , $nd )
 					$lo
 				}
 
-                {$pghash.ContainsKey($($_)) -eq $true}
-                {
-                    $targetpg = $pghash.Item($($_))
-					$protstat = $targetpg.QueryVmProtection($VMmoref)
-					$VMdsName = (Get-Datastore -Id $_).Name
-					$lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
-					$lo
-				}
-			}
-			$protstat , $lo  = $null
+                $protstat , $lo  = $null
+            }
 		}
 	}
 }
