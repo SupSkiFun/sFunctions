@@ -300,8 +300,9 @@ Function Protect-SRMVM
 
                 if ($targetpg)
                 {
-                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
-
+                    $targetpg = $targetpg.Value 
+                    $protstat = $targetpg.QueryVmProtection($VMmoref) 
+                   
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
@@ -778,7 +779,8 @@ Function UnProtect-SRMVM
 
                 if ($targetpg)
                 {
-                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
+                    $targetpg = $targetpg.Value
+                    $protstat = $targetpg.QueryVmProtection($VMmoref)
 
                     if ($protstat.Status -match $stat)
                     {
