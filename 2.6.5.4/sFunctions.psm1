@@ -134,7 +134,7 @@ Function Get-SRMTestState
     {
         foreach ($rp in $RecoveryPlan)
         {
-            
+
             $lo = [pscustomobject]@{
                 Name = $rp.Name
                 State = $rp.GetInfo().State.ToString()
@@ -173,7 +173,7 @@ function Get-SRMVM
     param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
 	)
 
     Begin
@@ -198,24 +198,21 @@ function Get-SRMVM
 			$VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-            foreach ($vmds in $VMdsID)
-            {
-                $ici = $pghash.GetEnumerator().where({$_.value -eq $vmds})
 
-                if ($ici)
+            foreach ($vmd in $VMdsID)
+            {
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                $VMdsName = $dshash.($($vmd).ToString())
+
+                if ($targetpg)
                 {
-                    {
-                        $targetpg = $pghash.Item($($_))  # change to $vmds?
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
-                        $VMdsName = $dshash.$vmds  # Need a subexpression?
+                        $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
                         $lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
                         $lo
-                    }
                 }
 
                 else
 				{
-					$VMdsName = $dshash.$vmds
 					$reason = "Protection Group not found for DataStore $VMdsName."
 					$lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref , $VMdsName , $nd )
 					$lo
@@ -254,7 +251,7 @@ Function Protect-SRMVM
     Param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
     )
 
     Begin
@@ -268,6 +265,7 @@ Function Protect-SRMVM
         $stat = "CanBeProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
     }
 
 
@@ -280,10 +278,12 @@ Function Protect-SRMVM
             $vspec = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
             $vspec.Vm = $VMmoref
             $ptask = $targetpg.ProtectVms($vspec)
+
             while(-not $ptask.IsComplete())
             {
                 Start-Sleep -Seconds 1
             }
+
             $pinfo = $ptask.getresult()
             $pinfo
         }
@@ -293,27 +293,22 @@ Function Protect-SRMVM
             $VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-            switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
-            {
-                {$pghash.ContainsKey($($_)) -eq $false}
-                {
-                    $VMdsName = (Get-Datastore -Id $_).Name
-                    $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                    $lo
-                }
 
-                {$pghash.ContainsKey($($_)) -eq $true}
+            foreach ($vmd in $VMdsID)
+            {
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+
+                if ($targetpg)
                 {
-                    $targetpg = $pghash.Item($($_))
-                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
+
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
                         $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
+
                     else
                     {
                         $reason = "State is $($protstat.Status).  State should be $stat."
@@ -321,6 +316,14 @@ Function Protect-SRMVM
                         $lo
                     }
                     break
+                }
+
+                else
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                    $lo
                 }
             }
 
@@ -729,7 +732,7 @@ Function UnProtect-SRMVM
     Param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
     )
 
     Begin
@@ -743,59 +746,65 @@ Function UnProtect-SRMVM
         $stat = "IsProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
     }
 
     Process
     {
-            Function UnProtVM
-            {
-                param($targetpg,$VMmoref)
+        Function UnProtVM
+        {
+            param($targetpg,$VMmoref)
 
-                $ptask = $targetpg.UnProtectVms($VMmoref)
-                while(-not $ptask.IsComplete())
-                {
-                    Start-Sleep -Seconds 1
-                }
-                $pinfo = $ptask.getresult()
-                $pinfo
+            $ptask = $targetpg.UnProtectVms($VMmoref)
+
+            while(-not $ptask.IsComplete())
+            {
+                Start-Sleep -Seconds 1
             }
 
-            foreach ($v in $vm)
+            $pinfo = $ptask.getresult()
+            $pinfo
+        }
+
+        foreach ($v in $vm)
+        {
+            $VMdsID = $v.ExtensionData.DataStore
+            $VMmoref = $v.ExtensionData.Moref
+            $VMname = $v.Name
+
+            foreach ($vmd in $VMdsID)
             {
-                $VMdsID = $v.ExtensionData.DataStore
-                $VMmoref = $v.ExtensionData.Moref
-                $VMname = $v.Name
-                switch ($VMdsID)
-                #  Switch loops if more than one $VMdsID.
+                $targetpg= $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+
+                if ($targetpg)
                 {
-                    {$pghash.ContainsKey($($_)) -eq $false}
+                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
+
+                    if ($protstat.Status -match $stat)
                     {
-                        $VMdsName = (Get-Datastore -Id $_).Name
-                        $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
+                        $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
 
-                    {$pghash.ContainsKey($($_)) -eq $true}
+                    else
                     {
-                        $targetpg = $pghash.Item($($_))
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
-                        if ($protstat.Status -match $stat)
-                        {
-                            $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
-                            $lo
-                        }
-
-                        else
-                        {
-                            $reason = "State is $($protstat.Status).  State should be $stat."
-                            $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                            $lo
-                        }
-                        break
+                        $reason = "State is $($protstat.Status).  State should be $stat."
+                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $lo
                     }
+                    break
+
                 }
+
+                else
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                    $lo
+                }
+            }
 
             $tinfo , $lo  = $null
         }
