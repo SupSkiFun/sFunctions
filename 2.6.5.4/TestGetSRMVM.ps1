@@ -104,7 +104,7 @@ function Get-SRMVMTest # Remove trailing Test
     param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
 	)
 
     Begin

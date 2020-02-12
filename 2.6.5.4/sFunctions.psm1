@@ -110,7 +110,7 @@ Function Get-SRMRecoveryPlan
 .SYNOPSIS
 Returns current state of SRM Test.
 .DESCRIPTION
-Returns current state of SRM Test.  Can be run on the recovery or protected site.
+Returns current state of SRM Test and running tasks.  Can be run on the recovery or protected site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .INPUTS
@@ -134,10 +134,11 @@ Function Get-SRMTestState
     {
         foreach ($rp in $RecoveryPlan)
         {
-            $st = $rp.GetInfo().State
+            
             $lo = [pscustomobject]@{
                 Name = $rp.Name
-                State = $st
+                State = $rp.GetInfo().State.ToString()
+                RunningTask = $rp.RecoveryPlanHasRunningTask().ToString()
             }
             $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Test.Status')
             $lo
