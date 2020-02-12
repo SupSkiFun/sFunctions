@@ -131,13 +131,15 @@ function Get-SRMVMTest # Remove trailing Test
             $VMname = $v.Name
             foreach ($vmd in $VMdsID)
             {
-                $ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                #$ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })    # Remove This?
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
                 $VMdsName = $dshash.($($vmd).ToString())
 
-                if ($ici)
+                if ($targetpg)
                 {
-                        $targetpg = $pghash.Item($($vmd))  # change to $vmd?
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
+                        # $targetpg = $pghash.Item($($vmd))  # change to $vmd?   #Remove This
+                        #  $protstat = $targetpg.QueryVmProtection($VMmoref)#Remove This  
+                        $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
                           # Move this up?!
                         $lo = [sClasss]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )    # Trailing S
                         $lo

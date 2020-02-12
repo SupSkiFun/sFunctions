@@ -165,12 +165,12 @@ Function Protect-SRMVMTEST  # Remove Trailing TEST
             
             foreach ($vmd in $VMdsID)
             {
-                $ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
 
-                if ($ici)
+                if ($targetpg)
                 {
-                    $targetpg = $pghash.Item($($vmd))
-                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+                    #$targetpg = $pghash.Item($($vmd))  # Remove This?
+                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
@@ -266,12 +266,12 @@ Function UnProtect-SRMVMTEST    # Remove Trailing TEST
             $VMname = $v.Name
             foreach ($vmd in $VMdsID)
             {
-                $ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                $targetpg= $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
                 
-                if ($ici)
+                if ($targetpg)
                 {
-                    $targetpg = $pghash.Item($($vmd))
-                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+                    #$targetpg = $pghash.Item($($vmd))  # Rmove this?
+                    $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
