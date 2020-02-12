@@ -136,6 +136,7 @@ Function Protect-SRMVMTEST  # Remove Trailing TEST
         $stat = "CanBeProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClasss]::MakePgHash($pgroups)   # Remove trailing s
+        $dshash = [sClasss]::MakeHash('ds')     # Remove trailing s
     }
 
 
@@ -161,20 +162,14 @@ Function Protect-SRMVMTEST  # Remove Trailing TEST
             $VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-            switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
+            
+            foreach ($vmd in $VMdsID)
             {
-                {$pghash.ContainsKey($($_)) -eq $false}
-                {
-                    $VMdsName = (Get-Datastore -Id $_).Name
-                    $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                    $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
-                    $lo
-                }
+                $ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
 
-                {$pghash.ContainsKey($($_)) -eq $true}
+                if ($ici)
                 {
-                    $targetpg = $pghash.Item($($_))
+                    $targetpg = $pghash.Item($($vmd))
                     $protstat = $targetpg.QueryVmProtection($VMmoref)
                     if ($protstat.Status -match $stat)
                     {
@@ -190,8 +185,16 @@ Function Protect-SRMVMTEST  # Remove Trailing TEST
                     }
                     break
                 }
-            }
 
+                else 
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
+                    $lo                    
+                }
+            }
+            
             $tinfo , $lo  = $null
         }
     }
@@ -238,59 +241,62 @@ Function UnProtect-SRMVMTEST    # Remove Trailing TEST
         $stat = "IsProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClasss]::MakePgHash($pgroups)    # Remove trailing s
+        $dshash = [sClasss]::MakeHash('ds')     # Trailing S
     }
 
     Process
     {
-            Function UnProtVM
-            {
-                param($targetpg,$VMmoref)
+        Function UnProtVM
+        {
+            param($targetpg,$VMmoref)
 
-                $ptask = $targetpg.UnProtectVms($VMmoref)
-                while(-not $ptask.IsComplete())
-                {
-                    Start-Sleep -Seconds 1
-                }
-                $pinfo = $ptask.getresult()
-                $pinfo
+            $ptask = $targetpg.UnProtectVms($VMmoref)
+            while(-not $ptask.IsComplete())
+            {
+                Start-Sleep -Seconds 1
             }
+            $pinfo = $ptask.getresult()
+            $pinfo
+        }
 
-            foreach ($v in $vm)
+        foreach ($v in $vm)
+        {
+            $VMdsID = $v.ExtensionData.DataStore
+            $VMmoref = $v.ExtensionData.Moref
+            $VMname = $v.Name
+            foreach ($vmd in $VMdsID)
             {
-                $VMdsID = $v.ExtensionData.DataStore
-                $VMmoref = $v.ExtensionData.Moref
-                $VMname = $v.Name
-                switch ($VMdsID)
-                #  Switch loops if more than one $VMdsID.
+                $ici = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                
+                if ($ici)
                 {
-                    {$pghash.ContainsKey($($_)) -eq $false}
+                    $targetpg = $pghash.Item($($vmd))
+                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+                    if ($protstat.Status -match $stat)
                     {
-                        $VMdsName = (Get-Datastore -Id $_).Name
-                        $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                        $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
+                        $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
+                        $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
 
-                    {$pghash.ContainsKey($($_)) -eq $true}
+                    else
                     {
-                        $targetpg = $pghash.Item($($_))
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
-                        if ($protstat.Status -match $stat)
-                        {
-                            $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
-                            $lo
-                        }
-
-                        else
-                        {
-                            $reason = "State is $($protstat.Status).  State should be $stat."
-                            $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
-                            $lo
-                        }
-                        break
+                        $reason = "State is $($protstat.Status).  State should be $stat."
+                        $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
+                        $lo
                     }
+                    break
+
                 }
+                
+                else
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClasss]::MakeObj( $reason , $VMname , $VMmoref ) # Remove trailing s
+                    $lo
+                }
+            }
 
             $tinfo , $lo  = $null
         }
