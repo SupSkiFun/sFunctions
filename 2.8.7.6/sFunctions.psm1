@@ -393,7 +393,7 @@ Returns an object of VM, VMMoRef, ProtectedVM, PeerProtectedVm, ProtectionGroup,
 PeerState, NeedsConfig and Faults.  Can be run on recovery or protected site.
 Note:  VM Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER ProtectionGroup
-[VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  See Examples.
+[VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]
 .OUTPUTS
