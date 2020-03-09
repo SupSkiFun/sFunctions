@@ -1,5 +1,24 @@
 class sClass
 {
+    static [hashtable] MakeHash( [string] $quoi )
+    {
+        $src = $null
+        $shash = @{}
+
+        switch ($quoi)
+        {
+            ds { $src = Get-Datastore -Name * }
+            ex { $src = Get-VMHost -Name * }
+            vm { $src = Get-VM -Name * }
+        }
+
+        foreach ($s in $src)
+        {
+            $shash.add($s.Id , $s.Name)
+        }
+        return $shash
+    }
+
     static [hashtable] MakePgHash ([psobject] $pgroups )
     {
         $pghash = @{}
@@ -20,20 +39,6 @@ class sClass
             Error = $nil
             Task = $nil
             TaskMoRef = $nil
-        }
-        $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
-        return $lo
-    }
-
-    static [pscustomobject] MakeObj( [VMware.VimAutomation.Srm.Views.SrmTaskInfo] $tinfo , [string] $VMname, [string] $VMmoref )
-    {
-        $lo = [pscustomobject]@{
-            VM = $VMname
-            VMMoRef = $VMmoref
-            Status = $tinfo.State
-            Error = $tinfo.Error.LocalizedMessage
-            Task = $tinfo.Name
-            TaskMoRef = $tinfo.TaskMoRef
         }
         $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
         return $lo

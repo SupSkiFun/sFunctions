@@ -1,20 +1,21 @@
 using module .\sClass.psm1
 
-<#
-.SYNOPSIS
-Connects to the SRM instance of the currently connected VCenter
-.DESCRIPTION
-Connects to the SRM instance of the currently connected VCenter and its paired partner with the current
-session username.  Prompts for a SRM password.  Password is applied locally and remotely.
-Can be run on recovery or protected site.
-.EXAMPLE
-csrm
-#>
-Function csrm
+Function MakeTobj
 {
-    $CUser=$env:USERDOMAIN;$CUser=$CUser+"\";$CUser=$CUser+$env:USERNAME
-    $CPass=Read-Host -AsSecureString -Prompt "Enter SRM password"
-    Connect-SrmServer -SrmServerAddress $DefaultVIServer -User $CUser -Password $CPass -RemoteUser $CUser -RemotePassword $CPass
+    <#  Helper Function used by Protect-SRMVM and UnProtect-SRMVM   #>
+
+    param($tinfo , $VMname, $VMmoref )
+
+    $lo = [pscustomobject]@{
+        VM = $VMname
+        VMMoRef = $VMmoref
+        Status = $tinfo.State
+        Error = $tinfo.Error.LocalizedMessage
+        Task = $tinfo.Name
+        TaskMoRef = $tinfo.TaskMoRef
+    }
+    $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protect.Info')
+    $lo
 }
 
 <#
@@ -107,6 +108,46 @@ Function Get-SRMRecoveryPlan
 
 <#
 .SYNOPSIS
+Returns current state of SRM Test.
+.DESCRIPTION
+Returns current state of SRM Test and running tasks.  Can be run on the recovery or protected site.
+.PARAMETER RecoveryPlan
+SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.INPUTS
+VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+.OUTPUTS
+[pscustomobject] SupSkiFun.SRM.Test.Status
+.EXAMPLE
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
+$p | Get-SRMTestState
+#>
+Function Get-SRMTestState
+{
+    [cmdletbinding()]
+    Param
+    (
+        [Parameter (Mandatory = $true , ValueFromPipeline = $true )]
+        [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan
+    )
+
+    Process
+    {
+        foreach ($rp in $RecoveryPlan)
+        {
+
+            $lo = [pscustomobject]@{
+                Name = $rp.Name
+                State = $rp.GetInfo().State.ToString()
+                RunningTask = $rp.RecoveryPlanHasRunningTask().ToString()
+            }
+            $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Test.Status')
+            $lo
+        }
+    }
+}
+
+<#
+.SYNOPSIS
 Obtains SRM VM Protection Information
 .DESCRIPTION
 Returns an object of VM, VMMoRef, Status, DataStore, ProtectionGroup, RecoveryPlan, ProtectedVM and PeerProtectedVm.
@@ -132,7 +173,7 @@ function Get-SRMVM
     param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
 	)
 
     Begin
@@ -144,7 +185,8 @@ function Get-SRMVM
 			break
 		}
         $pgroups = $srmED.Protection.ListProtectionGroups()
-		$pghash = [sClass]::MakePgHash($pgroups)
+        $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
 		$nd = "No Data"
 	}
 
@@ -156,27 +198,28 @@ function Get-SRMVM
 			$VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-			switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
+
+            foreach ($vmd in $VMdsID)
             {
-				{$pghash.ContainsKey($($_)) -eq $false}
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+                $VMdsName = $dshash.($($vmd).ToString())
+
+                if ($targetpg)
+                {
+                        $protstat = $targetpg.Value.QueryVmProtection($VMmoref)
+                        $lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
+                        $lo
+                }
+
+                else
 				{
-					$VMdsName = (Get-Datastore -Id $_).Name
-					$reason = "Protection Group not found for DataStore $VMdsName($_) ."
+					$reason = "Protection Group not found for DataStore $VMdsName."
 					$lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref , $VMdsName , $nd )
 					$lo
 				}
 
-                {$pghash.ContainsKey($($_)) -eq $true}
-                {
-                    $targetpg = $pghash.Item($($_))
-					$protstat = $targetpg.QueryVmProtection($VMmoref)
-					$VMdsName = (Get-Datastore -Id $_).Name
-					$lo = [sClass]::MakeObj( $protstat , $VMname , $VMmoref , $VMdsName )
-					$lo
-				}
-			}
-			$protstat , $lo  = $null
+                $protstat , $lo  = $null
+            }
 		}
 	}
 }
@@ -208,7 +251,7 @@ Function Protect-SRMVM
     Param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
     )
 
     Begin
@@ -222,6 +265,7 @@ Function Protect-SRMVM
         $stat = "CanBeProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
     }
 
 
@@ -234,10 +278,12 @@ Function Protect-SRMVM
             $vspec = [VMware.VimAutomation.Srm.Views.SrmProtectionGroupVmProtectionSpec]::new()
             $vspec.Vm = $VMmoref
             $ptask = $targetpg.ProtectVms($vspec)
+
             while(-not $ptask.IsComplete())
             {
                 Start-Sleep -Seconds 1
             }
+
             $pinfo = $ptask.getresult()
             $pinfo
         }
@@ -247,27 +293,23 @@ Function Protect-SRMVM
             $VMdsID = $v.ExtensionData.DataStore
             $VMmoref = $v.ExtensionData.Moref
             $VMname = $v.Name
-            switch ($VMdsID)
-            #  Switch loops if more than one $VMdsID.
-            {
-                {$pghash.ContainsKey($($_)) -eq $false}
-                {
-                    $VMdsName = (Get-Datastore -Id $_).Name
-                    $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                    $lo
-                }
 
-                {$pghash.ContainsKey($($_)) -eq $true}
+            foreach ($vmd in $VMdsID)
+            {
+                $targetpg = $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+
+                if ($targetpg)
                 {
-                    $targetpg = $pghash.Item($($_))
+                    $targetpg = $targetpg.Value
                     $protstat = $targetpg.QueryVmProtection($VMmoref)
+
                     if ($protstat.Status -match $stat)
                     {
                         $tinfo = ProtVM -targetpg $targetpg -VMmoref $VMmoref
-                        $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
+                        $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
+
                     else
                     {
                         $reason = "State is $($protstat.Status).  State should be $stat."
@@ -275,6 +317,14 @@ Function Protect-SRMVM
                         $lo
                     }
                     break
+                }
+
+                else
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                    $lo
                 }
             }
 
@@ -537,46 +587,50 @@ Function Start-SRMCleanUp
 .SYNOPSIS
 Starts a Test SRM Recovery Plan.
 .DESCRIPTION
-Starts a Test SRM Recovery Plan, optionally synching data.
+Starts a Test SRM Recovery Plan, optionally synching data.  Default is to not synch data.
 Does not attempt if submitted plan is not in a Ready state.  Must be run on the recovery site.
 .PARAMETER RecoveryPlan
 SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .PARAMETER SyncData
-Future:  Defaults to False.  Can be set True to Sync Data.  Believe exposed in SRM 6.5 API
+If specified, the test will execute Step 1 Synchronize Storage.
+If not specified Step 1 Synchronize Storage is skipped.
 .INPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .EXAMPLE
+Start SRM Test meeting a selection criteria:
 $p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
 $p | Start-SRMTest
 .EXAMPLE
-Future Functionality Below:
-$p = Get-SRMRecoveryPlan | Where-Object -Property Name -eq "PlanXYZ"
-$p | Start-SRMTest -SyncData=$False
+Start SRM Test(s) meeting a selection criteria, synchronizing storage:
+$p = Get-SRMRecoveryPlan | Where-Object -Property Name -match "ProdWeb*"
+$p | Start-SRMTest -SyncData
 #>
 
 Function Start-SRMTest
 {
-    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = "High")]
+    [cmdletbinding(SupportsShouldProcess = $True , ConfirmImpact = 'High')]
     Param
     (
         [Parameter (Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlan[]] $RecoveryPlan,
 
-        [bool] $SyncData = $False
+        [switch] $SyncData
     )
 
     Begin
     {
         [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode] $RecoveryMode = [VMware.VimAutomation.Srm.Views.SrmRecoveryPlanRecoveryMode]::Test
         $ReqState = "Ready"
+        $rpOpt = [VMware.VimAutomation.Srm.Views.SrmRecoveryOptions]::new()
 
-        <#
-        Below two lines for creating the option to synch or not.  Believe exposed in SRM 6.5 API
-        Also modify the entry in the process block.
-        $rpOpt = New-Object VMware.VimAutomation.Srm.Views.SrmRecoveryOptions
-        $rpOpt.SyncData = $SyncData
-        #>
-
+        if ($SyncData)
+        {
+            $rpOpt.SyncData = $true
+        }
+        else
+        {
+            $rpOpt.SyncData = $false
+        }
     }
 
     Process
@@ -589,12 +643,7 @@ Function Start-SRMTest
             {
                 if ($rpinfo.State -eq $ReqState)
                 {
-                    <#
-                    With Synch false purposely set, API 6.5 or Higher hopefully.
                     $rp.Start($RecoveryMode,$rpOpt)
-                    #>
-
-                    $rp.Start($RecoveryMode)
                 }
 
                 else
@@ -606,7 +655,6 @@ Function Start-SRMTest
         }
     }
 }
-
 <#
 .SYNOPSIS
 Stops / cancels an SRM Test.
@@ -685,7 +733,7 @@ Function UnProtect-SRMVM
     Param
     (
         [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
-        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]]$VM
+        [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine[]] $VM
     )
 
     Begin
@@ -699,59 +747,66 @@ Function UnProtect-SRMVM
         $stat = "IsProtected"
         $pgroups = $srmED.Protection.ListProtectionGroups()
         $pghash = [sClass]::MakePgHash($pgroups)
+        $dshash = [sClass]::MakeHash('ds')
     }
 
     Process
     {
-            Function UnProtVM
-            {
-                param($targetpg,$VMmoref)
+        Function UnProtVM
+        {
+            param($targetpg,$VMmoref)
 
-                $ptask = $targetpg.UnProtectVms($VMmoref)
-                while(-not $ptask.IsComplete())
-                {
-                    Start-Sleep -Seconds 1
-                }
-                $pinfo = $ptask.getresult()
-                $pinfo
+            $ptask = $targetpg.UnProtectVms($VMmoref)
+
+            while(-not $ptask.IsComplete())
+            {
+                Start-Sleep -Seconds 1
             }
 
-            foreach ($v in $vm)
+            $pinfo = $ptask.getresult()
+            $pinfo
+        }
+
+        foreach ($v in $vm)
+        {
+            $VMdsID = $v.ExtensionData.DataStore
+            $VMmoref = $v.ExtensionData.Moref
+            $VMname = $v.Name
+
+            foreach ($vmd in $VMdsID)
             {
-                $VMdsID = $v.ExtensionData.DataStore
-                $VMmoref = $v.ExtensionData.Moref
-                $VMname = $v.Name
-                switch ($VMdsID)
-                #  Switch loops if more than one $VMdsID.
+                $targetpg= $pghash.GetEnumerator().where({ $_.Name -eq $($vmd).ToString() })
+
+                if ($targetpg)
                 {
-                    {$pghash.ContainsKey($($_)) -eq $false}
+                    $targetpg = $targetpg.Value
+                    $protstat = $targetpg.QueryVmProtection($VMmoref)
+
+                    if ($protstat.Status -match $stat)
                     {
-                        $VMdsName = (Get-Datastore -Id $_).Name
-                        $reason = "Protection Group not found for DataStore $VMdsName($_) ."
-                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
+                        $lo = MakeTObj -tinfo $tinfo -VMname $VMname -VMmoref $VMmoref
                         $lo
                     }
 
-                    {$pghash.ContainsKey($($_)) -eq $true}
+                    else
                     {
-                        $targetpg = $pghash.Item($($_))
-                        $protstat = $targetpg.QueryVmProtection($VMmoref)
-                        if ($protstat.Status -match $stat)
-                        {
-                            $tinfo = UnProtVM -targetpg $targetpg -VMmoref $VMmoref
-                            $lo = [sClass]::MakeObj( $tinfo , $VMname , $VMmoref )
-                            $lo
-                        }
-
-                        else
-                        {
-                            $reason = "State is $($protstat.Status).  State should be $stat."
-                            $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
-                            $lo
-                        }
-                        break
+                        $reason = "State is $($protstat.Status).  State should be $stat."
+                        $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                        $lo
                     }
+                    break
+
                 }
+
+                else
+                {
+                    $VMdsName = $dshash.($($vmd).ToString())
+                    $reason = "Protection Group not found for DataStore $VMdsName."
+                    $lo = [sClass]::MakeObj( $reason , $VMname , $VMmoref )
+                    $lo
+                }
+            }
 
             $tinfo , $lo  = $null
         }
