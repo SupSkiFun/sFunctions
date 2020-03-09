@@ -124,6 +124,7 @@ $p | Get-SRMTestState
 Function Get-SRMTestState
 {
     [cmdletbinding()]
+    [Alias("Get-SRMRecoveryPlanState")]
     Param
     (
         [Parameter (Mandatory = $true , ValueFromPipeline = $true )]
