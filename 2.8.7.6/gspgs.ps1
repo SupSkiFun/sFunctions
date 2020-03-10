@@ -1,9 +1,8 @@
 <#
 .SYNOPSIS
-Returns the State of a Protection Group
+Returns the State of Protection Groups
 .DESCRIPTION
-Returns the State of a Protection Group from submitted Protection Groups.
-Returns an object of Name, State, ConfigOK, and NeedConfigVM.
+Returns the State of Protection Groups as an object of Name, State, ConfigOK, and NeedConfigVM.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
