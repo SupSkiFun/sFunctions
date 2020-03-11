@@ -49,7 +49,7 @@ class sClass
         $lo = [pscustomobject]@{
             VM = $VMname
             VMMoRef = $VMmoref
-            Status = $protstat.Status
+            Status = $protstat.Status.ToString()
             DataStore = $VMdsName
             ProtectionGroup = $protstat.ProtectionGroupName
             RecoveryPlan = $protstat.RecoveryPlanNames

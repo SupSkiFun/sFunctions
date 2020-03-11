@@ -62,6 +62,53 @@ function Get-SRMProtectionGroup
 
 <#
 .SYNOPSIS
+Returns the State of Protection Groups
+.DESCRIPTION
+Returns the State of Protection Groups as an object of Name, State, ConfigOK, and ConfigNeeded.
+.PARAMETER ProtectionGroup
+[VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
+.INPUTS
+[VMware.VimAutomation.Srm.Views.SrmProtectionGroup]
+.OUTPUTS
+[pscustomobject] SupSkiFun.SRM.Protection.Group.State
+.EXAMPLE
+Return Protection Group State from specific Protection Group(s) into the myInfo variable:
+$myPG = Get-SRMProtectionGroup | Where-Object -Property Name -Match "DS1"
+$myInfo = $myPG | Get-SRMProtectionGroupState
+.EXAMPLE
+Return Protection Group State from all Protection Groups into the myInfo variable:
+$myPG = Get-SRMProtectionGroup
+$myInfo = $myPG | Get-SRMProtectionGroupState
+#>
+function Get-SRMProtectionGroupState
+{
+	[CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
+        [VMware.VimAutomation.Srm.Views.SrmProtectionGroup[]] $ProtectionGroup
+	)
+
+	Process
+	{
+		foreach ($pgrp in $ProtectionGroup)
+		{
+            $pgst = $null
+            $pgst = $pgrp.ListProtectedVms().where({$_.NeedsConfiguration -eq "True"}).VmName
+            $lo = [pscustomobject]@{
+                Name = $pgrp.GetInfo().Name.ToString()
+                State = $pgrp.GetProtectionState().ToString()
+                ConfigOK = $pgrp.CheckConfigured()
+                ConfigNeeded = $pgst
+            }
+			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protection.Group.State')
+            $lo
+		}
+	}
+}
+
+<#
+.SYNOPSIS
 Retrieves SRM Recovery Plans
 .DESCRIPTION
 Retrieves SRM Recovery Plans.  Can be run on recovery or protected site.
@@ -391,7 +438,6 @@ Returns an object of Protected VMs.
 Returns an object of Protected VMs from submitted Protection Groups.
 Returns an object of VM, VMMoRef, ProtectedVM, PeerProtectedVm, ProtectionGroup, VMState,
 PeerState, NeedsConfig and Faults.  Can be run on recovery or protected site.
-Note:  VM Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
@@ -416,40 +462,21 @@ function Show-SRMProtectedVM
         [VMware.VimAutomation.Srm.Views.SrmProtectionGroup[]] $ProtectionGroup
 	)
 
-	Begin
-    {
-        $nota = "Not Available on Recovery Site; only available from the Protection Site"
-    }
-
 	Process
 	{
 		foreach ($pgrp in $ProtectionGroup)
 		{
 			$pvms = $pgrp.ListProtectedVms()
-			$pgst = $pgrp.GetProtectionState()
 			foreach ($pvm in $pvms)
 			{
-				switch ($pgst)
-				{
-					Ready
-					{
-						$pvm.vm.UpdateViewData()
-						$vmnom = $pvm.Vm.Config.Name
-					}
-					Shadowing
-					{
-						$vmnom = $nota
-					}
-				}
-
 				$lo = [pscustomobject]@{
-					VM = $vmnom
-					VMMoRef = $pvm.Vm.Moref
-					ProtectedVM = $pvm.ProtectedVm
-					PeerProtectedVm = $pvm.PeerProtectedVm
-					ProtectionGroup = $pgrp.Name
-					VMState = $pvm.State
-					PeerState = $pvm.PeerState
+					VM = $pvm.VmName.ToString()
+					VMMoRef = $pvm.Vm.Moref.ToString()
+					ProtectedVM = $pvm.ProtectedVm.ToString()
+					PeerProtectedVm = $pvm.PeerProtectedVm.ToString()
+					ProtectionGroup = $pgrp.Name.ToString()
+					VMState = $pvm.State.toString()
+					PeerState = $pvm.PeerState.ToString()
 					NeedsConfig = $pvm.NeedsConfiguration
 					Faults = $pvm.Faults
 				}
@@ -469,7 +496,7 @@ ProtectionGroup, DataStore, RecoveryPlanMoRef, ProtectionGroupMoref, DataStoreMo
 Can be run on recovery or protected site.
 Note:  DataStore Name is Not Available from the Recovery Site; it is only available from the Protection Site.
 .PARAMETER RecoveryPlan
-SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
+SRM Recovery Plan.  VMware.VimAutomation.Srm.Views.SrmRecoveryPlan.  See Examples.
 .INPUTS
 VMware.VimAutomation.Srm.Views.SrmRecoveryPlan
 .OUTPUTS
@@ -503,7 +530,7 @@ Function Show-SRMRelationship
         {
             $ap = $plan.GetInfo()
             $pg = $ap.ProtectionGroups.GetInfo().Name
-            $ar = $ap.ProtectionGroups.ListProtectedDatastores().Moref
+            $ar = $ap.ProtectionGroups.ListProtectedDatastores().Moref.ForEach({$_.ToString()})
             $pi = $plan.GetPeer()
 
             if ($ap.State -match "Protecting")
@@ -517,14 +544,14 @@ Function Show-SRMRelationship
 
             $lo = [pscustomobject]@{
                 RecoveryPlan = $ap.Name
-                RecoveryPlanState = $ap.State
+                RecoveryPlanState = $ap.State.ToString()
                 ProtectionGroup = $pg
                 Datastore = $ds
-                RecoveryPlanMoRef = $plan.MoRef
-                ProtectionGroupMoRef = $ap.ProtectionGroups.Moref
+                RecoveryPlanMoRef = $plan.MoRef.ToString()
+                ProtectionGroupMoRef = $ap.ProtectionGroups.Moref.ForEach({$_.ToString()})
                 DataStoreMoRef = $ar
-                PeerMoRef = $pi.PlanMoRef
-                PeerState = $pi.State
+                PeerMoRef = $pi.PlanMoRef.ToString()
+                PeerState = $pi.State.ToString()
             }
             $lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Info')
             $lo

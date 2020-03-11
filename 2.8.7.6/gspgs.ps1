@@ -2,7 +2,7 @@
 .SYNOPSIS
 Returns the State of Protection Groups
 .DESCRIPTION
-Returns the State of Protection Groups as an object of Name, State, ConfigOK, and NeedConfigVM.
+Returns the State of Protection Groups as an object of Name, State, ConfigOK, and ConfigNeeded.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
@@ -37,7 +37,7 @@ function Get-SRMProtectionGroupState
                 Name = $pgrp.GetInfo().Name.ToString()
                 State = $pgrp.GetProtectionState().ToString()
                 ConfigOK = $pgrp.CheckConfigured()
-                NeedsConfigVM = $pgst
+                ConfigNeeded = $pgst
             }
 			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protection.Group.State')
             $lo
