@@ -65,6 +65,7 @@ function Get-SRMProtectionGroup
 Returns the State of Protection Groups
 .DESCRIPTION
 Returns the State of Protection Groups as an object of Name, State, ConfigOK, and ConfigNeeded.
+Can be run on recovery or protected site.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
