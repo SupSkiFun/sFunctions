@@ -200,6 +200,8 @@ Obtains SRM VM Protection Information
 .DESCRIPTION
 Returns an object of VM, VMMoRef, Status, DataStore, ProtectionGroup, RecoveryPlan, ProtectedVM and PeerProtectedVm.
 Run on protected site to obtain full information.  Can be run on recovery site, but information is limited.
+.NOTES
+Works optimally for one to many VMs.  To retrieve all VMs in a protection group, Show-SRMProtectedVM will work better.
 .PARAMETER VM
 Output from VMWare PowerCLI Get-VM.  See Examples.
 [VMware.VimAutomation.ViCore.Types.V1.Inventory.VirtualMachine]
@@ -214,6 +216,8 @@ Get-VM -Name Server01 | Get-SRMVM
 .EXAMPLE
 Places an object of several VMs into a variable:
 $myVar = Get-VM -Name Test* | Get-SRMVM
+.LINK
+Show-SRMProtectedVM
 #>
 function Get-SRMVM
 {
@@ -438,6 +442,8 @@ Returns an object of Protected VMs.
 Returns an object of Protected VMs from submitted Protection Groups.
 Returns an object of VM, VMMoRef, ProtectedVM, PeerProtectedVm, ProtectionGroup, VMState,
 PeerState, NeedsConfig and Faults.  Can be run on recovery or protected site.
+.NOTES
+Works optimally for VMs in a Protection Group.  For a few VMs not in the same protection group, Get-SRMVM may work better.
 .PARAMETER ProtectionGroup
 [VMware.VimAutomation.Srm.Views.SrmProtectionGroup]  Protection Group Object.  See Examples.
 .INPUTS
@@ -452,6 +458,8 @@ $myInfo = $myPG | Show-SRMProtectedVM
 Return an object of VMs from all Protection Groups into the myInfo variable:
 $myPG = Get-SRMProtectionGroup
 $myInfo = $myPG | Show-SRMProtectedVM
+.LINK
+Get-SRMVM
 #>
 function Show-SRMProtectedVM
 {
