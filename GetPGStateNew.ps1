@@ -2,14 +2,11 @@ class sClassNew     #Change
 {
     static [pscustomobject] GetProtGrpInfo ([psobject] $pgrp)
     {
-        <#
-            Break this up or leave it be?
-            $pgcn , $pgnm , $pgok, $pgpn , $pgst , $pgvm = $null
-        #>
         $pgpn = $null
         $pgnm = $pgrp.GetInfo().Name.ToString()
         $pgvm = $pgrp.ListProtectedVms()
-        $pgcn = $pgvm.where({$_.NeedsConfiguration -eq $true}).VmName #    | Sort-Object   Just leave it?
+        $pgcn = $pgvm.Where({$_.NeedsConfiguration -eq $true}).VmName
+        $pgfl = $pgvm.Where({$null -ne $_.Faults}).VmName
         $pgok = $pgrp.CheckConfigured()
         $pgst = $pgrp.GetProtectionState().ToString()
 
@@ -23,7 +20,7 @@ class sClassNew     #Change
 
             {$_ -eq $false -and $pgst -eq 'Shadowing'}
             {
-                $pgpn = "Run on Protected Site for more info."
+                $pgpn = "See Help"
                 break
             }
         }
@@ -34,15 +31,25 @@ class sClassNew     #Change
             ConfigOK = $pgok
             ConfigNeeded = $pgcn
             ProtectionNeeded = $pgpn
+            Faults = $pgfl
         }
         return $lo
     }
 
-    static [array] GetUnProtVM ( [psobject] $pgrp , [psobject] $pgvn )
+    static [psobject] GetUnProtVM ( [psobject] $pgds , [psobject] $pgvn )
     {
-        $dss = Get-Datastore -id ($pgrp.ListProtectedDatastores().Moref)
+        $dss = Get-Datastore -id $pgds
         $vms = (Get-VM -Datastore $dss).Name
-        return $vms.Where({$pgvn -notcontains $_})
+        $npt = $vms.Where({$pgvn -notcontains $_})
+        
+        if ($npt)
+        {
+            return $npt
+        }
+        else
+        {
+            return $null
+        }
     }
 }
 
@@ -59,7 +66,7 @@ function Get-SRMProtectionGroupStateNew     #  Change
 	{
 		foreach ($pgrp in $ProtectionGroup)
 		{
-            $lo = [sClassNew]::GetProtGrpInfo($pgrp)
+            $lo = [sClassNew]::GetProtGrpInfo($pgrp)  #Change
 			$lo.PSObject.TypeNames.Insert(0,'SupSkiFun.SRM.Protection.Group.State')
             $lo
 		}
