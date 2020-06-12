@@ -1,2 +1,2 @@
 # sFunctions
-Various functions for administering VMware Site Recovery Manager (SRM).
+Various advanced functions for administering VMware Site Recovery Manager (SRM).
